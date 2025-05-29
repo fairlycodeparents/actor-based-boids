@@ -1,0 +1,8 @@
+target/
+
+#IDE data
+.vscode/
+.idea/
+
+#OS data
+.DS_Store
