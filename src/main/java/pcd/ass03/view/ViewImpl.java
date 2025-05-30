@@ -1,0 +1,99 @@
+package pcd.ass03.view;
+
+
+import akka.actor.ActorRef;
+
+import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
+import java.util.Hashtable;
+
+/**
+ * The BoidsView class is responsible for creating the graphical user interface (GUI) for the Boids simulation.
+ * It allows users to interact with the simulation, including starting, pausing, and stopping it.
+ * The view also provides sliders to adjust the weights of the boids behaviors (cohesion, separation, and alignment).
+ */
+public class ViewImpl implements ChangeListener, View {
+
+	private final static Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
+	private final static int SIDE_SIZE = Math.min(SCREEN_SIZE.width, SCREEN_SIZE.height) * 4 / 5;
+
+    /**
+	 * Constructor for the BoidsView class.
+	 */
+	public ViewImpl() {
+        JFrame frame = setFrame();
+
+		JPanel cp = new JPanel();
+		cp.setLayout(new BorderLayout());
+
+		// Create a panel for the buttons (stop and pause/resume)
+		JPanel buttonsPanel = new JPanel();
+        JButton stopButton = new JButton("Stop");
+        JButton pauseButton = new JButton("Pause");
+		buttonsPanel.add(stopButton);
+		buttonsPanel.add(pauseButton);
+		cp.add(BorderLayout.NORTH, buttonsPanel);
+
+		// Create a panel for the boids
+		JPanel boidsPanel = new BoidsPanel(this, frame.getWidth(), frame.getHeight());
+		cp.add(BorderLayout.CENTER, boidsPanel);
+
+		// Create a panel for the sliders
+        JPanel slidersPanel = new JPanel();
+        JSlider cohesionSlider = makeSlider();
+        JSlider separationSlider = makeSlider();
+        JSlider alignmentSlider = makeSlider();
+        slidersPanel.add(new JLabel("Separation"));
+		slidersPanel.add(separationSlider);
+        slidersPanel.add(new JLabel("Alignment"));
+		slidersPanel.add(alignmentSlider);
+        slidersPanel.add(new JLabel("Cohesion"));
+		slidersPanel.add(cohesionSlider);
+		cp.add(BorderLayout.SOUTH, slidersPanel);
+
+        frame.setContentPane(cp);
+        frame.setVisible(true);
+    }
+
+	private JFrame setFrame() {
+		final JFrame frame;
+		frame = new JFrame("Boids Simulation");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setSize(SIDE_SIZE, SIDE_SIZE);
+		frame.setResizable(true);
+		return frame;
+	}
+
+	private JSlider makeSlider() {
+		var slider = new JSlider(JSlider.HORIZONTAL, 0, 20, 10);        
+		slider.setMajorTickSpacing(10);
+		slider.setMinorTickSpacing(1);
+		slider.setPaintTicks(true);
+		slider.setPaintLabels(true);
+		Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
+		labelTable.put( 0, new JLabel("0") );
+		labelTable.put( 10, new JLabel("1") );
+		labelTable.put( 20, new JLabel("2") );
+		slider.setLabelTable( labelTable );
+		slider.setPaintLabels(true);
+        slider.addChangeListener(this);
+		return slider;
+	}
+
+	public void stateChanged(ChangeEvent e) {
+
+	}
+
+
+	@Override
+	public void setSupervisorActor(ActorRef gridActor) {
+
+	}
+
+	@Override
+	public void setViewActor(ActorRef viewActor) {
+
+	}
+}
