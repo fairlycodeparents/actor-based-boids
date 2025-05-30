@@ -16,7 +16,7 @@ public class Main {
     public static void main(final String[] args) {
         final View view = new ViewImpl();
         final Config config = ConfigFactory.parseFile(new File("src/main/java/pcd/ass03/application.conf"));
-        final ActorSystem system = ActorSystem.create("GameOfLifeSystem", config);
+        final ActorSystem system = ActorSystem.create("BoidsSimulationSystem", config);
         final ActorRef viewActor = system.actorOf(ViewActor.props(view), "view");
         final ActorRef gridActor = system.actorOf(SupervisorActor.props(), "supervisor");
 
