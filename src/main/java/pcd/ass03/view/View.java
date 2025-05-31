@@ -5,4 +5,5 @@ import akka.actor.ActorRef;
 public interface View {
     void setSupervisorActor(ActorRef gridActor);
     void setViewActor(ActorRef  viewActor);
+    void render(int FPS, Object boids);
 }

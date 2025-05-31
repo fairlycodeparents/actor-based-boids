@@ -96,4 +96,9 @@ public class ViewImpl implements ChangeListener, View {
 	public void setViewActor(ActorRef viewActor) {
 
 	}
+
+	@Override
+	public void render(int FPS, Object boids) {
+		// TODO
+	}
 }
