@@ -9,6 +9,9 @@ import pcd.ass03.view.View;
 
 import java.util.List;
 
+/**
+ * This actor represents a view for the Boids simulation.
+ */
 public class ViewActor extends AbstractActorWithStash {
 
     private final View view;
@@ -17,7 +20,8 @@ public class ViewActor extends AbstractActorWithStash {
 
     /**
      * Message which contains the results to be rendered by the view.
-     * It includes the FPS and the list of boids.
+     * @param FPS the frame rate
+     * @param boids the list of boids to render
      */
     public record RenderResultsMsg(int FPS, List<Boid> boids) { }
 
@@ -30,13 +34,20 @@ public class ViewActor extends AbstractActorWithStash {
                 .build();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Receive createReceive() {
         return this.behavior;
     }
 
+    /**
+     * Creates Props for a view actor.
+     * @param view the view to be used by the actor
+     * @return a Props for creating view actor, which can then be further configured
+     */
     public static Props props(View view) {
         return Props.create(ViewActor.class, view);
     }
-
 }
