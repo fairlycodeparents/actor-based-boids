@@ -98,7 +98,7 @@ public class ViewImpl implements ChangeListener, View {
 	}
 
 	@Override
-	public void render(int FPS, Object boids) {
+	public void render(int FPS, List<Boid> boids) {
 		// TODO
 	}
 }
