@@ -1,22 +1,31 @@
 package pcd.ass03.view;
 
+import pcd.ass03.model.Boid;
+import pcd.ass03.model.P2d;
+
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Panel for displaying the boids simulation.
  */
 public class BoidsPanel extends JPanel {
 
+    private final double width, height;
+    private final List<Boid> boids;
     private int frameRate;
 
     /**
      * Constructor for the BoidsPanel.
-     * @param view the view
      * @param width the logical width
      * @param height the logical height
      */
-    public BoidsPanel(View view, double width, double height) {
+    public BoidsPanel(double width, double height) {
+        this.width = width;
+        this.height = height;
+        this.boids = new ArrayList<>();
     }
 
     /**
@@ -27,10 +36,29 @@ public class BoidsPanel extends JPanel {
         this.frameRate = frameRate;
     }
 
+    /**
+     * Sets the boids.
+     * @param boids the list of boids
+     */
+    public void setBoids(List<Boid> boids) {
+        this.boids.clear();
+        this.boids.addAll(boids);
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         setBackground(Color.WHITE);
+
+        g.setColor(Color.BLUE);
+        List<Boid> boids = new ArrayList<>(this.boids);
+        for (Boid boid : boids) {
+            P2d pos = boid.getPos();
+            int px = (int)(width / 2.0 + pos.x());
+            int py = (int)(height / 2.0 - pos.y());
+            g.fillOval(px,py, 5, 5);
+        }
+
         g.setColor(Color.BLACK);
         g.drawString("FPS: " + frameRate, 10, 40);
     }

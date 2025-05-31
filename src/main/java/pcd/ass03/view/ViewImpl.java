@@ -2,12 +2,14 @@ package pcd.ass03.view;
 
 
 import akka.actor.ActorRef;
+import pcd.ass03.model.Boid;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.util.Hashtable;
+import java.util.List;
 
 /**
  * The BoidsView class is responsible for creating the graphical user interface (GUI) for the Boids simulation.
@@ -18,6 +20,8 @@ public class ViewImpl implements ChangeListener, View {
 
 	private final static Dimension SCREEN_SIZE = Toolkit.getDefaultToolkit().getScreenSize();
 	private final static int SIDE_SIZE = Math.min(SCREEN_SIZE.width, SCREEN_SIZE.height) * 4 / 5;
+
+	private final BoidsPanel boidsPanel;
 
     /**
 	 * Constructor for the BoidsView class.
@@ -37,7 +41,7 @@ public class ViewImpl implements ChangeListener, View {
 		cp.add(BorderLayout.NORTH, buttonsPanel);
 
 		// Create a panel for the boids
-		JPanel boidsPanel = new BoidsPanel(this, frame.getWidth(), frame.getHeight());
+		this.boidsPanel = new BoidsPanel(frame.getWidth(), frame.getHeight());
 		cp.add(BorderLayout.CENTER, boidsPanel);
 
 		// Create a panel for the sliders
@@ -62,7 +66,7 @@ public class ViewImpl implements ChangeListener, View {
 		frame = new JFrame("Boids Simulation");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(SIDE_SIZE, SIDE_SIZE);
-		frame.setResizable(true);
+		frame.setResizable(false);
 		return frame;
 	}
 
@@ -99,6 +103,8 @@ public class ViewImpl implements ChangeListener, View {
 
 	@Override
 	public void render(int FPS, List<Boid> boids) {
-		// TODO
+		this.boidsPanel.setFrameRate(FPS);
+		this.boidsPanel.setBoids(boids);
+		this.boidsPanel.repaint();
 	}
 }
