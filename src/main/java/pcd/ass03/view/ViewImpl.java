@@ -2,6 +2,7 @@ package pcd.ass03.view;
 
 
 import akka.actor.ActorRef;
+import pcd.ass03.actors.SupervisorActor;
 import pcd.ass03.model.Boid;
 
 import javax.swing.*;
@@ -22,8 +23,10 @@ public class ViewImpl implements ChangeListener, View {
 	private final static int SIDE_SIZE = Math.min(SCREEN_SIZE.width, SCREEN_SIZE.height) * 4 / 5;
 
 	private final BoidsPanel boidsPanel;
+	private boolean isPaused = false;
+	private ActorRef supervisorActor, viewActor;
 
-    /**
+	/**
 	 * Constructor for the BoidsView class.
 	 */
 	public ViewImpl() {
@@ -33,11 +36,7 @@ public class ViewImpl implements ChangeListener, View {
 		cp.setLayout(new BorderLayout());
 
 		// Create a panel for the buttons (stop and pause/resume)
-		JPanel buttonsPanel = new JPanel();
-        JButton stopButton = new JButton("Stop");
-        JButton pauseButton = new JButton("Pause");
-		buttonsPanel.add(stopButton);
-		buttonsPanel.add(pauseButton);
+		JPanel buttonsPanel = getButtonsPanel();
 		cp.add(BorderLayout.NORTH, buttonsPanel);
 
 		// Create a panel for the boids
@@ -60,6 +59,27 @@ public class ViewImpl implements ChangeListener, View {
         frame.setContentPane(cp);
         frame.setVisible(true);
     }
+
+	private JPanel getButtonsPanel() {
+		JPanel buttonsPanel = new JPanel();
+		JButton stopButton = new JButton("Stop");
+		stopButton.addActionListener(e ->
+				supervisorActor.tell(new SupervisorActor.StopMsg(), ActorRef.noSender())
+		);
+		JButton pauseButton = new JButton("Pause");
+		pauseButton.addActionListener(e -> {
+			supervisorActor.tell(
+					this.isPaused ? new SupervisorActor.ResumeMsg() : new SupervisorActor.PauseMsg(),
+					ActorRef.noSender()
+			);
+			pauseButton.setText(this.isPaused ? "Pause" : "Resume");
+			stopButton.setEnabled(this.isPaused);
+			this.isPaused = !this.isPaused;
+		});
+		buttonsPanel.add(stopButton);
+		buttonsPanel.add(pauseButton);
+		return buttonsPanel;
+	}
 
 	private JFrame setFrame() {
 		final JFrame frame;
@@ -92,13 +112,13 @@ public class ViewImpl implements ChangeListener, View {
 
 
 	@Override
-	public void setSupervisorActor(ActorRef gridActor) {
-
+	public void setSupervisorActor(ActorRef supervisorActor) {
+		this.supervisorActor = supervisorActor;
 	}
 
 	@Override
 	public void setViewActor(ActorRef viewActor) {
-
+		this.viewActor = viewActor;
 	}
 
 	@Override
