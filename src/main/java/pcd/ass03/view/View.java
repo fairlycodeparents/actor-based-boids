@@ -9,4 +9,5 @@ public interface View {
     void setSupervisorActor(ActorRef gridActor);
     void setViewActor(ActorRef  viewActor);
     void render(int FPS, List<Boid> boids);
+    void start();
 }

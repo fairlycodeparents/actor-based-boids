@@ -23,6 +23,7 @@ public class ViewImpl implements ChangeListener, View {
 	private final static int SIDE_SIZE = Math.min(SCREEN_SIZE.width, SCREEN_SIZE.height) * 4 / 5;
 
 	private final BoidsPanel boidsPanel;
+	private final JFrame frame;
 	private boolean isPaused = false;
 	private ActorRef supervisorActor, viewActor;
 
@@ -30,7 +31,7 @@ public class ViewImpl implements ChangeListener, View {
 	 * Constructor for the BoidsView class.
 	 */
 	public ViewImpl() {
-        JFrame frame = setFrame();
+		this.frame = setFrame();
 
 		JPanel cp = new JPanel();
 		cp.setLayout(new BorderLayout());
@@ -59,6 +60,28 @@ public class ViewImpl implements ChangeListener, View {
         frame.setContentPane(cp);
         frame.setVisible(true);
     }
+
+	@Override
+	public void start() {
+		supervisorActor.tell(new SupervisorActor.StartMsg(this.getBoidCountFromUser(frame)), ActorRef.noSender());
+	}
+
+	private Integer getBoidCountFromUser(JFrame frame) {
+		String input;
+		do {
+			input = JOptionPane.showInputDialog(
+					frame,
+					"Insert number of boids:",
+					"Input",
+					JOptionPane.QUESTION_MESSAGE
+			);
+			if (input == null) {	// Handles the "cancel" button
+				frame.dispose();
+				System.exit(0);
+			}
+		} while (input.isEmpty());
+		return Integer.parseInt(input);
+	}
 
 	private JPanel getButtonsPanel() {
 		JPanel buttonsPanel = new JPanel();
