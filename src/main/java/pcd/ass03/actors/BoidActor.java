@@ -1,6 +1,7 @@
 package pcd.ass03.actors;
 
 import akka.actor.AbstractActor;
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
@@ -19,7 +20,7 @@ import java.util.Objects;
 public class BoidActor extends AbstractActor {
 
     private final LoggingAdapter log;
-    private Receive behavior;
+    private Receive waiting, updating;
     private V2d vel;
     private P2d pos;
 
@@ -30,7 +31,9 @@ public class BoidActor extends AbstractActor {
      * @param alignment the alignment factor for the boids
      * @param cohesion the cohesion factor for the boids
      */
-    public record UpdateRequestMsg(List<Boid> boids, double separation, double alignment, double cohesion) { }
+    public record UpdateRequestMsg(List<Boid> boids, double separation, double alignment, double cohesion,
+                                   double maxSpeed, double minX, double maxX, double minY, double maxY, double width,
+                                   double height) { }
 
     private void unknownMsgHandler(Object msg) {
         log.info("Received unknown message: " + msg);
@@ -45,10 +48,24 @@ public class BoidActor extends AbstractActor {
         this.vel = vel;
         this.pos = pos;
         this.log = Logging.getLogger(getContext().getSystem(), this);
-        this.behavior = receiveBuilder()
+        this.waiting = receiveBuilder()
                 .match(UpdateRequestMsg.class, msg -> {
-                    log.info("Received update request.");
-                    // TODO: process the update (get neighbours, compute new velocity and position)
+                    final List<Boid> nearbyBoids = getNearbyBoids(msg.boids(), msg.separation);
+                    getContext().become(this.updating);
+                    getSelf().tell(
+                            new UpdateRequestMsg(nearbyBoids, msg.separation, msg.alignment, msg.cohesion,
+                                    msg.maxSpeed, msg.minX, msg.maxX, msg.minY, msg.maxY, msg.width, msg.height),
+                            ActorRef.noSender()
+                    );
+                })
+                .matchAny(this::unknownMsgHandler)
+                .build();
+        this.updating = receiveBuilder()
+                .match(UpdateRequestMsg.class, msg -> {
+                    getContext().become(this.waiting);
+                    update(msg.boids(), msg.alignment, msg.cohesion, msg.separation, msg.separation, msg.maxSpeed,
+                            msg.minX, msg.maxX, msg.minY, msg.maxY, msg.width, msg.height);
+                    getSender().tell(new Boid(this.pos, this.vel), getSelf());
                 })
                 .matchAny(this::unknownMsgHandler)
                 .build();
@@ -154,7 +171,7 @@ public class BoidActor extends AbstractActor {
      */
     @Override
     public Receive createReceive() {
-        return this.behavior;
+        return this.waiting;
     }
 
     /**
