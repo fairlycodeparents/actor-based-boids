@@ -86,9 +86,10 @@ public class ViewImpl implements ChangeListener, View {
 	private JPanel getButtonsPanel() {
 		JPanel buttonsPanel = new JPanel();
 		JButton stopButton = new JButton("Stop");
-		stopButton.addActionListener(e ->
-				supervisorActor.tell(new SupervisorActor.StopMsg(), ActorRef.noSender())
-		);
+		stopButton.addActionListener(e -> {
+			supervisorActor.tell(new SupervisorActor.StopMsg(), ActorRef.noSender());
+			this.start();
+		});
 		JButton pauseButton = new JButton("Pause");
 		pauseButton.addActionListener(e -> {
 			supervisorActor.tell(
