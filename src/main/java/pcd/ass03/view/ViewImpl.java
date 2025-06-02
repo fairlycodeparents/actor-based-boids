@@ -106,10 +106,10 @@ public class ViewImpl implements ChangeListener, View {
 		return slider;
 	}
 
+	@Override
 	public void stateChanged(ChangeEvent e) {
-
+		// TODO: Handle slider changes or put handler directly in the constructor (line 105)
 	}
-
 
 	@Override
 	public void setSupervisorActor(ActorRef supervisorActor) {
