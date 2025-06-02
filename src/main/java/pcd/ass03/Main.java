@@ -22,5 +22,6 @@ public class Main {
 
         view.setSupervisorActor(gridActor);
         view.setViewActor(viewActor);
+        view.start();
     }
 }

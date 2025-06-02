@@ -48,6 +48,7 @@ public class BoidActor extends AbstractActor {
         this.vel = vel;
         this.pos = pos;
         this.log = Logging.getLogger(getContext().getSystem(), this);
+        log.info("BoidActor {} created with position: {}, velocity: {}", getSelf().path().name(), pos, vel); // TODO: log used as a debugging tool
         this.waiting = receiveBuilder()
                 .match(UpdateRequestMsg.class, msg -> {
                     final List<Boid> nearbyBoids = getNearbyBoids(msg.boids(), msg.separation);
@@ -176,9 +177,11 @@ public class BoidActor extends AbstractActor {
 
     /**
      * Creates Props for a supervisor actor.
+     * @param vel the initial velocity of the boid
+     * @param pos the initial position of the boid
      * @return a Props for creating a supervisor actor, which can then be further configured
      */
-    public static Props props() {
-        return Props.create(BoidActor.class);
+    public static Props props(V2d vel, P2d pos) {
+        return Props.create(BoidActor.class, vel, pos);
     }
 }

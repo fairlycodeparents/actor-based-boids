@@ -1,9 +1,15 @@
 package pcd.ass03.actors;
 
 import akka.actor.AbstractActorWithStash;
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import pcd.ass03.model.P2d;
+import pcd.ass03.model.V2d;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This actor supervises the Boids simulation, managing its lifecycle and state transitions.
@@ -11,7 +17,12 @@ import akka.event.LoggingAdapter;
  */
 public class SupervisorActor extends AbstractActorWithStash {
 
+    private static final double WIDTH = 1000;
+    private static final double HEIGHT = 1000;
+    private static final double MAX_SPEED = 4.0;
+
     private final LoggingAdapter log;
+    private final List<ActorRef> boidActors;
     private Receive stoppedBehavior, runningBehavior, pausedBehavior;
 
     private int numBoids;
@@ -43,9 +54,22 @@ public class SupervisorActor extends AbstractActorWithStash {
 
     public SupervisorActor() {
         this.log = Logging.getLogger(getContext().getSystem(), this);
+        this.boidActors = new ArrayList<>();
         this.stoppedBehavior = receiveBuilder()
                 .match(StartMsg.class, msg -> {
-                    this.numBoids = msg.numBoids; //TODO: initialize n boids actors
+                    log.info("Starting simulation with {} boids", msg.numBoids); // TODO: log used as a debugging tool
+                    for (int i = 0; i < msg.numBoids; i++) {
+                        P2d pos = new P2d(
+                                -WIDTH / 2 + Math.random() * WIDTH,
+                                -HEIGHT / 2 + Math.random() * HEIGHT
+                        );
+                        V2d vel = new V2d(
+                                Math.random() * MAX_SPEED / 2 - MAX_SPEED / 4,
+                                Math.random() * MAX_SPEED / 2 - MAX_SPEED / 4
+                        );
+                        ActorRef boidActor = getContext().actorOf(BoidActor.props(vel, pos), "boid-" + i);
+                        this.boidActors.add(boidActor);
+                    }
                     getContext().become(this.runningBehavior);
                 })
                 .matchAny(this::unknownMsgHandler)
