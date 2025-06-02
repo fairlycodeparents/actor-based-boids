@@ -53,7 +53,7 @@ public class BoidsPanel extends JPanel {
         g.setColor(Color.BLUE);
         List<Boid> boids = new ArrayList<>(this.boids);
         for (Boid boid : boids) {
-            P2d pos = boid.getPos();
+            P2d pos = boid.pos();
             int px = (int)(width / 2.0 + pos.x());
             int py = (int)(height / 2.0 - pos.y());
             g.fillOval(px,py, 5, 5);
