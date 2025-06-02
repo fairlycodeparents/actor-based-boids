@@ -11,12 +11,15 @@ import pcd.ass03.model.V2d;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.plaf.SliderUI;
+
 /**
  * This actor supervises the Boids simulation, managing its lifecycle and state transitions.
  * It can start, stop, pause, and resume the simulation.
  */
 public class SupervisorActor extends AbstractActorWithStash {
 
+    private static final int SLIDER_VALUE = 10;
     private static final double WIDTH = 1000;
     private static final double HEIGHT = 1000;
     private static final double MAX_SPEED = 4.0;
@@ -24,6 +27,10 @@ public class SupervisorActor extends AbstractActorWithStash {
     private final LoggingAdapter log;
     private final List<ActorRef> boidActors;
     private Receive stoppedBehavior, runningBehavior, pausedBehavior;
+    private static int alignmentValue = SLIDER_VALUE;
+    private static int cohesionValue = SLIDER_VALUE;
+    private static int separationValue = SLIDER_VALUE;
+    private int numBoids;
 
     /**
      * This message allows to start the simulation with a specified number of boids.
@@ -45,6 +52,43 @@ public class SupervisorActor extends AbstractActorWithStash {
      * This message allows to resume the simulation after a pause.
      */
     public static final class ResumeMsg { }
+
+    public static final class SeparationMsg {
+        private final int value;
+
+        public SeparationMsg(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+    }
+
+    public static final class CohesionMsg {
+        private final int value;
+
+        public CohesionMsg(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+    }
+
+    public static final class AlignmentMsg {
+        private final int value;
+
+        public AlignmentMsg(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+    }
+
 
     private void unknownMsgHandler(Object msg) {
         log.info("Received unknown message: " + msg);
@@ -97,12 +141,34 @@ public class SupervisorActor extends AbstractActorWithStash {
                 .build();
     }
 
+    private void broadcastToBoids(Object msg) {
+        // TODO
+        log.info("Broadcasting message to boids: " + msg);
+        log.info("ALIGNMENT VALUE: " + alignmentValue);
+        log.info("COHESION VALUE: " + cohesionValue);
+        log.info("SEPARATION VALUE: " + separationValue);
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
     public Receive createReceive() {
-        return this.stoppedBehavior;
+        return receiveBuilder()
+                .match(AlignmentMsg.class, msg -> {
+                    this.alignmentValue = msg.getValue();
+                    broadcastToBoids(msg);
+                })
+                .match(CohesionMsg.class, msg -> {
+                    this.cohesionValue = msg.getValue();
+                    broadcastToBoids(msg);
+                })
+                .match(SeparationMsg.class, msg -> {
+                    this.separationValue = msg.getValue();
+                    broadcastToBoids(msg);
+                })
+                .matchAny(this::unknownMsgHandler)
+                .build();
     }
 
     /**

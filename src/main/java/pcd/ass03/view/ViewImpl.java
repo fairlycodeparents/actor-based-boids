@@ -46,10 +46,13 @@ public class ViewImpl implements ChangeListener, View {
 
 		// Create a panel for the sliders
         JPanel slidersPanel = new JPanel();
-        JSlider cohesionSlider = makeSlider();
-        JSlider separationSlider = makeSlider();
-        JSlider alignmentSlider = makeSlider();
-        slidersPanel.add(new JLabel("Separation"));
+		JSlider cohesionSlider = makeSlider();
+		cohesionSlider.setName("cohesion");
+		JSlider separationSlider = makeSlider();
+		separationSlider.setName("separation");
+		JSlider alignmentSlider = makeSlider();
+		alignmentSlider.setName("alignment");
+		slidersPanel.add(new JLabel("Separation"));
 		slidersPanel.add(separationSlider);
         slidersPanel.add(new JLabel("Alignment"));
 		slidersPanel.add(alignmentSlider);
@@ -132,7 +135,15 @@ public class ViewImpl implements ChangeListener, View {
 
 	@Override
 	public void stateChanged(ChangeEvent e) {
-		// TODO: Handle slider changes or put handler directly in the constructor (line 105)
+		if (e.getSource() instanceof JSlider slider) {
+			int value = slider.getValue();
+			String name = slider.getName();
+			switch (name) {
+				case "cohesion" -> supervisorActor.tell(new SupervisorActor.CohesionMsg(value), ActorRef.noSender());
+				case "separation" -> supervisorActor.tell(new SupervisorActor.SeparationMsg(value), ActorRef.noSender());
+				case "alignment" -> supervisorActor.tell(new SupervisorActor.AlignmentMsg(value), ActorRef.noSender());
+			}
+		}
 	}
 
 	@Override
