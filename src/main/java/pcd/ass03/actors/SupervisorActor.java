@@ -5,6 +5,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import pcd.ass03.model.Boid;
 import pcd.ass03.model.P2d;
 import pcd.ass03.model.V2d;
 
@@ -23,6 +24,7 @@ public class SupervisorActor extends AbstractActorWithStash {
 
     private final LoggingAdapter log;
     private final List<ActorRef> boidActors;
+    private final List<Boid> boids;
     private Receive stoppedBehavior, runningBehavior, pausedBehavior;
     private double alignmentWeight, cohesionWeight, separationWeight;
 
@@ -58,6 +60,17 @@ public class SupervisorActor extends AbstractActorWithStash {
      */
     public record UpdateWeightsMsg(Weights weight, double value) { }
 
+    /**
+     * This message is sent to signal that a boid has been updated.
+     * @param boid the updated boid
+     */
+    public record UpdatedBoidMsg(Boid boid) {}
+
+    /**
+     * This class represents a tick in the simulation. It signals that the simulation should update its state.
+     */
+    public record TickMsg(long FPS) { }
+
     private void unknownMsgHandler(Object msg) {
         log.info("Received unknown message: " + msg);
     }
@@ -73,6 +86,7 @@ public class SupervisorActor extends AbstractActorWithStash {
     public SupervisorActor() {
         this.log = Logging.getLogger(getContext().getSystem(), this);
         this.boidActors = new ArrayList<>();
+        this.boids = new ArrayList<>();
         this.stoppedBehavior = receiveBuilder()
                 .match(StartMsg.class, msg -> {
                     log.info("Starting simulation with {} boids", msg.numBoids); // TODO: log used as a debugging tool
@@ -104,6 +118,12 @@ public class SupervisorActor extends AbstractActorWithStash {
                 })
                 .match(PauseMsg.class, msg -> getContext().become(this.pausedBehavior))
                 .match(UpdateWeightsMsg.class, this::updateWeight)
+                .match(UpdatedBoidMsg.class, msg -> this.boids.add(msg.boid))
+                .match(TickMsg.class, msg -> {
+                    // TODO: if a tick is received, the supervisor should check if the boids are updated.
+                    // if they are, it should send the updated boids to the view actor.
+                    // Otherwise, it should send back a msg who sent the tick to signal that more time is needed.
+                })
                 .matchAny(this::unknownMsgHandler)
                 .build();
         this.pausedBehavior = receiveBuilder()
