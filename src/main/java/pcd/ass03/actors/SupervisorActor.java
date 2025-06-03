@@ -11,15 +11,12 @@ import pcd.ass03.model.V2d;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.plaf.SliderUI;
-
 /**
  * This actor supervises the Boids simulation, managing its lifecycle and state transitions.
  * It can start, stop, pause, and resume the simulation.
  */
 public class SupervisorActor extends AbstractActorWithStash {
 
-    private static final int SLIDER_VALUE = 10;
     private static final double WIDTH = 1000;
     private static final double HEIGHT = 1000;
     private static final double MAX_SPEED = 4.0;
@@ -27,10 +24,7 @@ public class SupervisorActor extends AbstractActorWithStash {
     private final LoggingAdapter log;
     private final List<ActorRef> boidActors;
     private Receive stoppedBehavior, runningBehavior, pausedBehavior;
-    private static int alignmentValue = SLIDER_VALUE;
-    private static int cohesionValue = SLIDER_VALUE;
-    private static int separationValue = SLIDER_VALUE;
-    private int numBoids;
+    private double alignmentWeight, cohesionWeight, separationWeight;
 
     /**
      * This message allows to start the simulation with a specified number of boids.
@@ -53,45 +47,27 @@ public class SupervisorActor extends AbstractActorWithStash {
      */
     public static final class ResumeMsg { }
 
-    public static final class SeparationMsg {
-        private final int value;
-
-        public SeparationMsg(int value) {
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
-        }
+    public enum Weights {
+        ALIGNMENT, COHESION, SEPARATION;
     }
 
-    public static final class CohesionMsg {
-        private final int value;
-
-        public CohesionMsg(int value) {
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
-        }
-    }
-
-    public static final class AlignmentMsg {
-        private final int value;
-
-        public AlignmentMsg(int value) {
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
-        }
-    }
-
+    /**
+     * This message allows to update the weights of the boids behaviors.
+     * @param weight the weight to update
+     * @param value the new value for the weight
+     */
+    public record UpdateWeightsMsg(Weights weight, double value) { }
 
     private void unknownMsgHandler(Object msg) {
         log.info("Received unknown message: " + msg);
+    }
+
+    private void updateWeight(UpdateWeightsMsg msg) {
+        switch (msg.weight) {
+            case ALIGNMENT -> this.alignmentWeight = msg.value;
+            case COHESION -> this.cohesionWeight = msg.value;
+            case SEPARATION -> this.separationWeight = msg.value;
+        }
     }
 
     public SupervisorActor() {
@@ -133,20 +109,14 @@ public class SupervisorActor extends AbstractActorWithStash {
                     getContext().become(this.stoppedBehavior);
                 })
                 .match(PauseMsg.class, msg -> getContext().become(this.pausedBehavior))
+                .match(UpdateWeightsMsg.class, this::updateWeight)
                 .matchAny(this::unknownMsgHandler)
                 .build();
         this.pausedBehavior = receiveBuilder()
                 .match(ResumeMsg.class, msg -> getContext().become(this.runningBehavior))
+                .match(UpdateWeightsMsg.class, this::updateWeight)
                 .matchAny(this::unknownMsgHandler)
                 .build();
-    }
-
-    private void broadcastToBoids(Object msg) {
-        // TODO
-        log.info("Broadcasting message to boids: " + msg);
-        log.info("ALIGNMENT VALUE: " + alignmentValue);
-        log.info("COHESION VALUE: " + cohesionValue);
-        log.info("SEPARATION VALUE: " + separationValue);
     }
 
     /**
@@ -154,21 +124,7 @@ public class SupervisorActor extends AbstractActorWithStash {
      */
     @Override
     public Receive createReceive() {
-        return receiveBuilder()
-                .match(AlignmentMsg.class, msg -> {
-                    this.alignmentValue = msg.getValue();
-                    broadcastToBoids(msg);
-                })
-                .match(CohesionMsg.class, msg -> {
-                    this.cohesionValue = msg.getValue();
-                    broadcastToBoids(msg);
-                })
-                .match(SeparationMsg.class, msg -> {
-                    this.separationValue = msg.getValue();
-                    broadcastToBoids(msg);
-                })
-                .matchAny(this::unknownMsgHandler)
-                .build();
+        return this.stoppedBehavior;
     }
 
     /**

@@ -3,6 +3,7 @@ package pcd.ass03.view;
 
 import akka.actor.ActorRef;
 import pcd.ass03.actors.SupervisorActor;
+import pcd.ass03.actors.SupervisorActor.Weights;
 import pcd.ass03.model.Boid;
 
 import javax.swing.*;
@@ -24,6 +25,7 @@ public class ViewImpl implements ChangeListener, View {
 
 	private final BoidsPanel boidsPanel;
 	private final JFrame frame;
+	private final JSlider cohesionSlider, separationSlider, alignmentSlider;
 	private boolean isPaused = false;
 	private ActorRef supervisorActor, viewActor;
 
@@ -46,13 +48,10 @@ public class ViewImpl implements ChangeListener, View {
 
 		// Create a panel for the sliders
         JPanel slidersPanel = new JPanel();
-		JSlider cohesionSlider = makeSlider();
-		cohesionSlider.setName("cohesion");
-		JSlider separationSlider = makeSlider();
-		separationSlider.setName("separation");
-		JSlider alignmentSlider = makeSlider();
-		alignmentSlider.setName("alignment");
-		slidersPanel.add(new JLabel("Separation"));
+        this.cohesionSlider = makeSlider();
+        this.separationSlider = makeSlider();
+        this.alignmentSlider = makeSlider();
+        slidersPanel.add(new JLabel("Separation"));
 		slidersPanel.add(separationSlider);
         slidersPanel.add(new JLabel("Alignment"));
 		slidersPanel.add(alignmentSlider);
@@ -135,14 +134,24 @@ public class ViewImpl implements ChangeListener, View {
 
 	@Override
 	public void stateChanged(ChangeEvent e) {
-		if (e.getSource() instanceof JSlider slider) {
-			int value = slider.getValue();
-			String name = slider.getName();
-			switch (name) {
-				case "cohesion" -> supervisorActor.tell(new SupervisorActor.CohesionMsg(value), ActorRef.noSender());
-				case "separation" -> supervisorActor.tell(new SupervisorActor.SeparationMsg(value), ActorRef.noSender());
-				case "alignment" -> supervisorActor.tell(new SupervisorActor.AlignmentMsg(value), ActorRef.noSender());
-			}
+		if (e.getSource() == this.separationSlider) {
+			var val = this.separationSlider.getValue();
+			this.supervisorActor.tell(
+					new SupervisorActor.UpdateWeightsMsg(Weights.SEPARATION, 0.1 * val),
+					ActorRef.noSender()
+			);
+		} else if (e.getSource() == this.cohesionSlider) {
+			var val = this.cohesionSlider.getValue();
+			this.supervisorActor.tell(
+					new SupervisorActor.UpdateWeightsMsg(Weights.COHESION, 0.1 * val),
+					ActorRef.noSender()
+			);
+		} else {
+			var val = this.alignmentSlider.getValue();
+			this.supervisorActor.tell(
+					new SupervisorActor.UpdateWeightsMsg(Weights.ALIGNMENT, 0.1 * val),
+					ActorRef.noSender()
+			);
 		}
 	}
 
