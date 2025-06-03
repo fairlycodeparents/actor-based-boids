@@ -76,26 +76,17 @@ public class SupervisorActor extends AbstractActorWithStash {
         this.stoppedBehavior = receiveBuilder()
                 .match(StartMsg.class, msg -> {
                     log.info("Starting simulation with {} boids", msg.numBoids); // TODO: log used as a debugging tool
-                    if (msg.numBoids > this.boidActors.size()) {
-                        for (int i = this.boidActors.size(); i < msg.numBoids; i++) {
-                            P2d pos = new P2d(
-                                    -WIDTH / 2 + Math.random() * WIDTH,
-                                    -HEIGHT / 2 + Math.random() * HEIGHT
-                            );
-                            V2d vel = new V2d(
-                                    Math.random() * MAX_SPEED / 2 - MAX_SPEED / 4,
-                                    Math.random() * MAX_SPEED / 2 - MAX_SPEED / 4
-                            );
-                            ActorRef boidActor = getContext().actorOf(BoidActor.props(vel, pos), "boid-" + i);
-                            this.boidActors.add(boidActor);
-                        }
-                    } else if (msg.numBoids < this.boidActors.size()) {
-                        for (int i = msg.numBoids - 1; i <= this.boidActors.size(); i++) {
-                            ActorRef boidActor = this.boidActors.getLast();
-                            log.info("Stopping boid actor: {}", boidActor.path().name());
-                            getContext().stop(boidActor);
-                            this.boidActors.remove(boidActor);
-                        }
+                    for (int i = 0; i < msg.numBoids; i++) {
+                        P2d pos = new P2d(
+                                -WIDTH / 2 + Math.random() * WIDTH,
+                                -HEIGHT / 2 + Math.random() * HEIGHT
+                        );
+                        V2d vel = new V2d(
+                                Math.random() * MAX_SPEED / 2 - MAX_SPEED / 4,
+                                Math.random() * MAX_SPEED / 2 - MAX_SPEED / 4
+                        );
+                        ActorRef boidActor = getContext().actorOf(BoidActor.props(vel, pos), "boid-" + i);
+                        this.boidActors.add(boidActor);
                     }
                     getContext().become(this.runningBehavior);
                     log.info("Current boid actors:" +
@@ -105,7 +96,10 @@ public class SupervisorActor extends AbstractActorWithStash {
                 .build();
         this.runningBehavior = receiveBuilder()
                 .match(StopMsg.class, msg -> {
-                    //TODO: kill all boids actors
+                    for (ActorRef boidActor : this.boidActors) {
+                        getContext().stop(boidActor);
+                    }
+                    log.info("Simulation stopped");
                     getContext().become(this.stoppedBehavior);
                 })
                 .match(PauseMsg.class, msg -> getContext().become(this.pausedBehavior))
