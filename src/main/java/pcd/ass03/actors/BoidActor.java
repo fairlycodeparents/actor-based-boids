@@ -23,6 +23,9 @@ public class BoidActor extends AbstractActor {
     private Receive waiting, updating;
     private V2d vel;
     private P2d pos;
+    private ActorRef supervisorActor;
+
+    public record SetSupervisorActorMsg(ActorRef supervisorActor) {}
 
     /**
      * This message allows to update the boid state.
@@ -50,6 +53,11 @@ public class BoidActor extends AbstractActor {
         this.log = Logging.getLogger(getContext().getSystem(), this);
         log.info("BoidActor {} created with position: {}, velocity: {}", getSelf().path().name(), pos, vel); // TODO: log used as a debugging tool
         this.waiting = receiveBuilder()
+                .match(SetSupervisorActorMsg.class, msg -> {
+                    this.supervisorActor = msg.supervisorActor();
+                    log.info("set of supervisor: " + this.supervisorActor.toString());
+                })
+
                 .match(UpdateRequestMsg.class, msg -> {
                     final List<Boid> nearbyBoids = getNearbyBoids(msg.boids(), msg.separation);
                     getContext().become(this.updating);
