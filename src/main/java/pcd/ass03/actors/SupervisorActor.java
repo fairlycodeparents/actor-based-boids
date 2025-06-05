@@ -18,8 +18,6 @@ import java.util.List;
  */
 public class SupervisorActor extends AbstractActorWithStash {
 
-    private static final double WIDTH = 1000;
-    private static final double HEIGHT = 1000;
     private static final double MAX_SPEED = 4.0;
 
     private final LoggingAdapter log;
@@ -29,17 +27,13 @@ public class SupervisorActor extends AbstractActorWithStash {
     private double alignmentWeight, cohesionWeight, separationWeight;
     private ActorRef viewActor;
 
-    public void setViewActor(ActorRef viewActor) {
-        this.viewActor = viewActor;
-    }
-
     public record SetViewActorMsg(ActorRef viewActor) {}
 
     /**
      * This message allows to start the simulation with a specified number of boids.
      * @param numBoids the number of boids to initialize
      */
-    public record StartMsg(int numBoids) { }
+    public record StartMsg(int numBoids, double frameSize) { }
 
     /**
      * This message allows to stop the simulation.
@@ -106,8 +100,8 @@ public class SupervisorActor extends AbstractActorWithStash {
                     log.info("Starting simulation with {} boids", msg.numBoids); // TODO: log used as a debugging tool
                     for (int i = 0; i < msg.numBoids; i++) {
                         P2d pos = new P2d(
-                                -WIDTH / 2 + Math.random() * WIDTH,
-                                -HEIGHT / 2 + Math.random() * HEIGHT
+                                -msg.frameSize / 2 + Math.random() * msg.frameSize,
+                                -msg.frameSize / 2 + Math.random() * msg.frameSize
                         );
                         V2d vel = new V2d(
                                 Math.random() * MAX_SPEED / 2 - MAX_SPEED / 4,
@@ -115,10 +109,20 @@ public class SupervisorActor extends AbstractActorWithStash {
                         );
                         ActorRef boidActor = getContext().actorOf(BoidActor.props(vel, pos), "boid-" + i);
                         this.boidActors.add(boidActor);
+                        this.boids.add(i,new Boid(pos,vel));
                     }
                     getContext().become(this.runningBehavior);
                     log.info("Current boid actors:" +
                             this.boidActors.stream().map(act -> act.path().name()).toList());
+
+                    //TODO: move in tick
+                    if (viewActor != null) {
+                        viewActor.tell(new ViewActor.RenderResultsMsg((int) 60, new ArrayList<>(this.boids)), getSelf());
+                        log.info("render of " + this.boids.size() + " boids");
+                        this.boids.clear();
+                    } else {
+                        log.warning("ViewActor not set - cannot send render results");
+                    }
                 })
                 .matchAny(this::unknownMsgHandler)
                 .build();

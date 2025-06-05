@@ -65,7 +65,7 @@ public class ViewImpl implements ChangeListener, View {
 
 	@Override
 	public void start() {
-		supervisorActor.tell(new SupervisorActor.StartMsg(this.getBoidCountFromUser(frame)), ActorRef.noSender());
+		supervisorActor.tell(new SupervisorActor.StartMsg(this.getBoidCountFromUser(frame), SIDE_SIZE), ActorRef.noSender());
 	}
 
 	private Integer getBoidCountFromUser(JFrame frame) {
