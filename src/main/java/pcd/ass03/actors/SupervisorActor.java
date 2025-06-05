@@ -120,7 +120,10 @@ public class SupervisorActor extends AbstractActorWithStash {
                     log.info("Simulation stopped");
                     getContext().become(this.stoppedBehavior);
                 })
-                .match(PauseMsg.class, msg -> getContext().become(this.pausedBehavior))
+                .match(PauseMsg.class, msg -> {
+                        getContext().become(this.pausedBehavior);
+                        log.info("Simulation paused");
+                })
                 .match(UpdateWeightsMsg.class, this::updateWeight)
                 .match(UpdatedBoidMsg.class, msg -> this.boids.add(msg.boid))
                 .match(TickMsg.class, msg -> {
@@ -131,7 +134,11 @@ public class SupervisorActor extends AbstractActorWithStash {
                 .matchAny(this::unknownMsgHandler)
                 .build();
         this.pausedBehavior = receiveBuilder()
-                .match(ResumeMsg.class, msg -> getContext().become(this.runningBehavior))
+                .match(ResumeMsg.class, msg -> {
+                            getContext().become(this.runningBehavior);
+                            log.info("Simulation resumed");
+                        }
+                )
                 .match(UpdateWeightsMsg.class, this::updateWeight)
                 .matchAny(this::unknownMsgHandler)
                 .build();
