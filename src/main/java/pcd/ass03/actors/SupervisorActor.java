@@ -27,6 +27,13 @@ public class SupervisorActor extends AbstractActorWithStash {
     private final List<Boid> boids;
     private Receive stoppedBehavior, runningBehavior, pausedBehavior;
     private double alignmentWeight, cohesionWeight, separationWeight;
+    private ActorRef viewActor;
+
+    public void setViewActor(ActorRef viewActor) {
+        this.viewActor = viewActor;
+    }
+
+    public record SetViewActorMsg(ActorRef viewActor) {}
 
     /**
      * This message allows to start the simulation with a specified number of boids.
@@ -88,6 +95,9 @@ public class SupervisorActor extends AbstractActorWithStash {
         this.boidActors = new ArrayList<>();
         this.boids = new ArrayList<>();
         this.stoppedBehavior = receiveBuilder()
+                .match(SetViewActorMsg.class, msg -> {
+                    this.viewActor = msg.viewActor();
+                })
                 .match(StartMsg.class, msg -> {
                     for(ActorRef actor : boidActors){
                         getContext().stop(actor);

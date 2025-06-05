@@ -18,10 +18,11 @@ public class Main {
         final Config config = ConfigFactory.parseFile(new File("src/main/java/pcd/ass03/application.conf"));
         final ActorSystem system = ActorSystem.create("BoidsSimulationSystem", config);
         final ActorRef viewActor = system.actorOf(ViewActor.props(view), "view");
-        final ActorRef gridActor = system.actorOf(SupervisorActor.props(), "supervisor");
+        final ActorRef supervisorActor = system.actorOf(SupervisorActor.props(), "supervisor");
 
-        view.setSupervisorActor(gridActor);
+        view.setSupervisorActor(supervisorActor);
         view.setViewActor(viewActor);
+        supervisorActor.tell(new SupervisorActor.SetViewActorMsg(viewActor), ActorRef.noSender());
         view.start();
     }
 }
