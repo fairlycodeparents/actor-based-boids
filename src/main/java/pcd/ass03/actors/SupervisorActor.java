@@ -89,6 +89,10 @@ public class SupervisorActor extends AbstractActorWithStash {
         this.boids = new ArrayList<>();
         this.stoppedBehavior = receiveBuilder()
                 .match(StartMsg.class, msg -> {
+                    for(ActorRef actor : boidActors){
+                        getContext().stop(actor);
+                    }
+                    boidActors.clear();
                     log.info("Starting simulation with {} boids", msg.numBoids); // TODO: log used as a debugging tool
                     for (int i = 0; i < msg.numBoids; i++) {
                         P2d pos = new P2d(

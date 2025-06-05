@@ -8,7 +8,7 @@ public abstract class AlignmentActor extends AbstractActor {
     public static Props props() {
         return Props.create(AlignmentActor.class);
     }
-
+/*
     @Override
     public Receive createReceive() {
         return receiveBuilder()
@@ -17,5 +17,5 @@ public abstract class AlignmentActor extends AbstractActor {
                 })
                 .build();
     }
-
+*/
 }
