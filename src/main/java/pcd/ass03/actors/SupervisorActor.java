@@ -124,7 +124,10 @@ public class SupervisorActor extends AbstractActorWithStash {
                         getContext().become(this.pausedBehavior);
                         log.info("Simulation paused");
                 })
-                .match(UpdateWeightsMsg.class, this::updateWeight)
+                .match(UpdateWeightsMsg.class, msg -> {
+                        this.updateWeight(msg);
+                        log.info("Updated " + msg.weight);
+                })
                 .match(UpdatedBoidMsg.class, msg -> this.boids.add(msg.boid))
                 .match(TickMsg.class, msg -> {
                     // TODO: if a tick is received, the supervisor should check if the boids are updated.
