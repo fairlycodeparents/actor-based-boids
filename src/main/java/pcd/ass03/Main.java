@@ -21,7 +21,6 @@ public class Main {
         final ActorRef supervisorActor = system.actorOf(SupervisorActor.props(), "supervisor");
 
         view.setSupervisorActor(supervisorActor);
-        view.setViewActor(viewActor);
         supervisorActor.tell(new SupervisorActor.SetViewActorMsg(viewActor), ActorRef.noSender());
         view.start();
     }
