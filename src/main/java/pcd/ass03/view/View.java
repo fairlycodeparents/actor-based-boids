@@ -10,4 +10,5 @@ public interface View {
     void setViewActor(ActorRef  viewActor);
     void render(int FPS, List<Boid> boids);
     void start();
+    void updatePauseState(boolean isPaused);
 }

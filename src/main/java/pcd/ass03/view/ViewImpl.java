@@ -26,6 +26,7 @@ public class ViewImpl implements ChangeListener, View {
 	private final BoidsPanel boidsPanel;
 	private final JFrame frame;
 	private final JSlider cohesionSlider, separationSlider, alignmentSlider;
+	private JButton stopButton, pauseButton;
 	private boolean isPaused = false;
 	private ActorRef supervisorActor, viewActor;
 
@@ -68,6 +69,13 @@ public class ViewImpl implements ChangeListener, View {
 		supervisorActor.tell(new SupervisorActor.StartMsg(this.getBoidCountFromUser(frame), SIDE_SIZE), ActorRef.noSender());
 	}
 
+	@Override
+	public void updatePauseState(boolean isPaused) {
+		this.isPaused = isPaused;
+		pauseButton.setText(this.isPaused ? "Resume" : "Pause");
+		stopButton.setEnabled(!this.isPaused);
+	}
+
 	private Integer getBoidCountFromUser(JFrame frame) {
 		String input;
 		do {
@@ -87,21 +95,14 @@ public class ViewImpl implements ChangeListener, View {
 
 	private JPanel getButtonsPanel() {
 		JPanel buttonsPanel = new JPanel();
-		JButton stopButton = new JButton("Stop");
-		stopButton.addActionListener(e -> {
-			supervisorActor.tell(new SupervisorActor.StopMsg(), ActorRef.noSender());
-			this.start();
-		});
-		JButton pauseButton = new JButton("Pause");
-		pauseButton.addActionListener(e -> {
-			supervisorActor.tell(
-					this.isPaused ? new SupervisorActor.ResumeMsg() : new SupervisorActor.PauseMsg(),
-					ActorRef.noSender()
-			);
-			pauseButton.setText(this.isPaused ? "Pause" : "Resume");
-			stopButton.setEnabled(this.isPaused);
-			this.isPaused = !this.isPaused;
-		});
+		this.stopButton = new JButton("Stop");
+		this.stopButton.addActionListener(e ->
+				supervisorActor.tell(new SupervisorActor.StopMsg(), ActorRef.noSender()));
+		this.pauseButton = new JButton("Pause");
+		this.pauseButton.addActionListener(e -> supervisorActor.tell(
+                this.isPaused ? new SupervisorActor.ResumeMsg() : new SupervisorActor.PauseMsg(),
+                ActorRef.noSender()
+        ));
 		buttonsPanel.add(stopButton);
 		buttonsPanel.add(pauseButton);
 		return buttonsPanel;

@@ -25,11 +25,19 @@ public class ViewActor extends AbstractActorWithStash {
      */
     public record RenderResultsMsg(int FPS, List<Boid> boids) { }
 
+    /**
+     * Message to update the pause state of the view.
+     * @param isPaused true if the simulation is paused, false otherwise
+     */
+    public record SetPauseStateMsg(boolean isPaused) { }
+
     public ViewActor(View view) {
         this.view = view;
         this.log = Logging.getLogger(getContext().getSystem(), this);
         this.behavior = receiveBuilder()
                 .match(RenderResultsMsg.class, msg -> this.view.render(msg.FPS(), msg.boids()))
+                .match(SetPauseStateMsg.class, msg -> this.view.updatePauseState(msg.isPaused))
+                .match(SupervisorActor.StopMsg.class, msg -> view.start())
                 .matchAny(msg -> log.info("Received unknown message: " + msg))
                 .build();
     }

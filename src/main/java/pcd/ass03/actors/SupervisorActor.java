@@ -128,15 +128,17 @@ public class SupervisorActor extends AbstractActorWithStash {
                 .build();
         this.runningBehavior = receiveBuilder()
                 .match(StopMsg.class, msg -> {
-                    for (ActorRef boidActor : this.boidActors) {
-                        getContext().stop(boidActor);
-                    }
-                    log.info("Simulation stopped");
-                    getContext().become(this.stoppedBehavior);
+                        for (ActorRef boidActor : this.boidActors) {
+                            getContext().stop(boidActor);
+                        }
+                        viewActor.tell(msg, ActorRef.noSender());
+                        log.info("Simulation stopped");
+                        getContext().become(this.stoppedBehavior);
                 })
                 .match(PauseMsg.class, msg -> {
-                        getContext().become(this.pausedBehavior);
+                        viewActor.tell(new ViewActor.SetPauseStateMsg(true), getSelf());
                         log.info("Simulation paused");
+                        getContext().become(this.pausedBehavior);
                 })
                 .match(UpdateWeightsMsg.class, msg -> {
                         this.updateWeight(msg);
@@ -152,10 +154,10 @@ public class SupervisorActor extends AbstractActorWithStash {
                 .build();
         this.pausedBehavior = receiveBuilder()
                 .match(ResumeMsg.class, msg -> {
-                            getContext().become(this.runningBehavior);
-                            log.info("Simulation resumed");
-                        }
-                )
+                        viewActor.tell(new ViewActor.SetPauseStateMsg(false), getSelf());
+                        log.info("Simulation resumed");
+                        getContext().become(this.runningBehavior);
+                })
                 .match(UpdateWeightsMsg.class, this::updateWeight)
                 .matchAny(this::unknownMsgHandler)
                 .build();
