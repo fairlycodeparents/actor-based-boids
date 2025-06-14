@@ -28,9 +28,9 @@ public class ViewImpl implements ChangeListener, View {
 	private final JSlider cohesionSlider, separationSlider, alignmentSlider;
 	private JButton stopButton, pauseButton;
 	private boolean isPaused = false;
-	private ActorRef supervisorActor, viewActor;
+	private ActorRef supervisorActor;
 
-	/**
+    /**
 	 * Constructor for the BoidsView class.
 	 */
 	public ViewImpl() {
@@ -159,11 +159,6 @@ public class ViewImpl implements ChangeListener, View {
 	@Override
 	public void setSupervisorActor(ActorRef supervisorActor) {
 		this.supervisorActor = supervisorActor;
-	}
-
-	@Override
-	public void setViewActor(ActorRef viewActor) {
-		this.viewActor = viewActor;
 	}
 
 	@Override
