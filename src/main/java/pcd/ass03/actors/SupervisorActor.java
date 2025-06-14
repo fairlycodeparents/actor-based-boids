@@ -19,6 +19,7 @@ import java.util.List;
 public class SupervisorActor extends AbstractActorWithStash {
 
     private static final double MAX_SPEED = 4.0;
+    private static final int FPS = 60;
 
     private final LoggingAdapter log;
     private final List<ActorRef> boidActors;
@@ -26,6 +27,7 @@ public class SupervisorActor extends AbstractActorWithStash {
     private Receive stoppedBehavior, runningBehavior, pausedBehavior;
     private double alignmentWeight, cohesionWeight, separationWeight;
     private ActorRef viewActor;
+    private long lastFrameTime;
 
     public record SetViewActorMsg(ActorRef viewActor) {}
 
@@ -51,7 +53,7 @@ public class SupervisorActor extends AbstractActorWithStash {
     public static final class ResumeMsg { }
 
     public enum Weights {
-        ALIGNMENT, COHESION, SEPARATION;
+        ALIGNMENT, COHESION, SEPARATION
     }
 
     /**
@@ -89,14 +91,13 @@ public class SupervisorActor extends AbstractActorWithStash {
         this.boidActors = new ArrayList<>();
         this.boids = new ArrayList<>();
         this.stoppedBehavior = receiveBuilder()
-                .match(SetViewActorMsg.class, msg -> {
-                    this.viewActor = msg.viewActor();
-                })
+                .match(SetViewActorMsg.class, msg -> this.viewActor = msg.viewActor())
                 .match(StartMsg.class, msg -> {
                     for(ActorRef actor : boidActors){
                         getContext().stop(actor);
                     }
                     boidActors.clear();
+                    lastFrameTime = System.currentTimeMillis();
                     log.info("Starting simulation with {} boids", msg.numBoids); // TODO: log used as a debugging tool
                     for (int i = 0; i < msg.numBoids; i++) {
                         P2d pos = new P2d(
@@ -112,17 +113,10 @@ public class SupervisorActor extends AbstractActorWithStash {
                         this.boids.add(i,new Boid(pos,vel));
                     }
                     getContext().become(this.runningBehavior);
+                    this.updateBoids();
+                    getSelf().tell(new TickMsg(), getSelf());
                     log.info("Current boid actors:" +
                             this.boidActors.stream().map(act -> act.path().name()).toList());
-
-                    //TODO: move in tick
-                    if (viewActor != null) {
-                        viewActor.tell(new ViewActor.RenderResultsMsg((int) 60, new ArrayList<>(this.boids)), getSelf());
-                        log.info("render of " + this.boids.size() + " boids");
-                        this.boids.clear();
-                    } else {
-                        log.warning("ViewActor not set - cannot send render results");
-                    }
                 })
                 .matchAny(this::unknownMsgHandler)
                 .build();
@@ -146,9 +140,21 @@ public class SupervisorActor extends AbstractActorWithStash {
                 })
                 .match(UpdatedBoidMsg.class, msg -> this.boids.add(msg.boid))
                 .match(TickMsg.class, msg -> {
-                    // TODO: if a tick is received, the supervisor should check if the boids are updated.
-                    // if they are, it should send the updated boids to the view actor.
-                    // Otherwise, it should send back a msg who sent the tick to signal that more time is needed.
+                        int fps = this.updateFPS();
+                        log.info("Tick received: " + fps);
+                        if (boids.size() == boidActors.size() && fps > 0) {
+                            if (viewActor != null) {
+                                viewActor.tell(
+                                        new ViewActor.RenderResultsMsg(fps, new ArrayList<>(this.boids)),
+                                        getSelf()
+                                );
+                                log.info("render of " + this.boids.size() + " boids");
+                                this.updateBoids();
+                            } else {
+                                log.warning("ViewActor not set - cannot send render results");
+                            }
+                        }
+                        getSelf().tell(new TickMsg(), getSelf());
                 })
                 .matchAny(this::unknownMsgHandler)
                 .build();
@@ -161,6 +167,26 @@ public class SupervisorActor extends AbstractActorWithStash {
                 .match(UpdateWeightsMsg.class, this::updateWeight)
                 .matchAny(this::unknownMsgHandler)
                 .build();
+    }
+
+    private int updateFPS() {
+        long currentTime = System.currentTimeMillis();
+        var dtElapsed = currentTime - lastFrameTime;
+        if (dtElapsed < FPS) {
+            return -1;
+        } else {
+            return (int) (1000/dtElapsed);
+        }
+    }
+
+    private void updateBoids() {
+        for (ActorRef boidActor : this.boidActors) {
+            boidActor.tell(new BoidActor.UpdateRequestMsg(
+                    new ArrayList<>(this.boids), this.alignmentWeight, this.cohesionWeight, this.separationWeight,
+                    MAX_SPEED, -1000, 1000, -1000, 1000, 2000, 2000
+            ), getSelf());
+        }
+        this.boids.clear();
     }
 
     /**
