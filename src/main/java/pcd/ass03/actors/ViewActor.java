@@ -1,6 +1,6 @@
 package pcd.ass03.actors;
 
-import akka.actor.AbstractActorWithStash;
+import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * This actor represents a view for the Boids simulation.
  */
-public class ViewActor extends AbstractActorWithStash {
+public class ViewActor extends AbstractActor {
 
     private final View view;
     private final LoggingAdapter log;
