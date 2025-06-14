@@ -70,7 +70,7 @@ public class SupervisorActor extends AbstractActorWithStash {
     /**
      * This class represents a tick in the simulation. It signals that the simulation should update its state.
      */
-    public record TickMsg(long FPS) { }
+    public static class TickMsg { }
 
     private void unknownMsgHandler(Object msg) {
         log.info("Received unknown message: " + msg);
