@@ -1,7 +1,6 @@
 package pcd.ass03.actors;
 
 import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
@@ -20,19 +19,23 @@ import java.util.Objects;
 public class BoidActor extends AbstractActor {
 
     private final LoggingAdapter log;
-    private Receive waiting, updating;
     private V2d vel;
     private P2d pos;
-    private ActorRef supervisorActor;
-
-    public record SetSupervisorActorMsg(ActorRef supervisorActor) {}
 
     /**
-     * This message allows to update the boid state.
+     * Message to request an update of the boid's state.
+     * Contains the list of nearby boids and parameters for the boid's behavior.
      * @param boids the list of boids in the simulation
-     * @param separation the separation factor for the boids
-     * @param alignment the alignment factor for the boids
-     * @param cohesion the cohesion factor for the boids
+     * @param separation the weight for separation behavior
+     * @param alignment the weight for alignment behavior
+     * @param cohesion the weight for cohesion behavior
+     * @param maxSpeed the maximum speed of the boid
+     * @param minX the minimum x-coordinate for the boid's position
+     * @param maxX the maximum x-coordinate for the boid's position
+     * @param minY the minimum y-coordinate for the boid's position
+     * @param maxY the maximum y-coordinate for the boid's position
+     * @param width the width of the simulation area
+     * @param height the height of the simulation area
      */
     public record UpdateRequestMsg(List<Boid> boids, double separation, double alignment, double cohesion,
                                    double maxSpeed, double minX, double maxX, double minY, double maxY, double width,
@@ -52,32 +55,6 @@ public class BoidActor extends AbstractActor {
         this.pos = pos;
         this.log = Logging.getLogger(getContext().getSystem(), this);
         log.info("BoidActor {} created with position: {}, velocity: {}", getSelf().path().name(), pos, vel); // TODO: log used as a debugging tool
-        this.waiting = receiveBuilder()
-                .match(SetSupervisorActorMsg.class, msg -> {
-                    this.supervisorActor = msg.supervisorActor();
-                    log.info("set of supervisor: " + this.supervisorActor.toString());
-                })
-
-                .match(UpdateRequestMsg.class, msg -> {
-                    final List<Boid> nearbyBoids = getNearbyBoids(msg.boids(), msg.separation);
-                    getContext().become(this.updating);
-                    getSelf().tell(
-                            new UpdateRequestMsg(nearbyBoids, msg.separation, msg.alignment, msg.cohesion,
-                                    msg.maxSpeed, msg.minX, msg.maxX, msg.minY, msg.maxY, msg.width, msg.height),
-                            ActorRef.noSender()
-                    );
-                })
-                .matchAny(this::unknownMsgHandler)
-                .build();
-        this.updating = receiveBuilder()
-                .match(UpdateRequestMsg.class, msg -> {
-                    getContext().become(this.waiting);
-                    update(msg.boids(), msg.alignment, msg.cohesion, msg.separation, msg.separation, msg.maxSpeed,
-                            msg.minX, msg.maxX, msg.minY, msg.maxY, msg.width, msg.height);
-                    getSender().tell(new Boid(this.pos, this.vel), getSelf());
-                })
-                .matchAny(this::unknownMsgHandler)
-                .build();
     }
 
     private List<Boid> getNearbyBoids(List<Boid> boids, double perceptionRadius) {
@@ -180,7 +157,15 @@ public class BoidActor extends AbstractActor {
      */
     @Override
     public Receive createReceive() {
-        return this.waiting;
+        return receiveBuilder()
+                .match(UpdateRequestMsg.class, msg -> {
+                    final List<Boid> nearbyBoids = getNearbyBoids(msg.boids(), msg.separation);
+                    update(nearbyBoids, msg.alignment, msg.cohesion, msg.separation, msg.separation, msg.maxSpeed,
+                            msg.minX, msg.maxX, msg.minY, msg.maxY, msg.width, msg.height);
+                    getSender().tell(new SupervisorActor.UpdatedBoidMsg(new Boid(this.pos, this.vel)), getSelf());
+                })
+                .matchAny(this::unknownMsgHandler)
+                .build();
     }
 
     /**
