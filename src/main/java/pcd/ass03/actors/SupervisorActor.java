@@ -18,7 +18,7 @@ import java.util.List;
  */
 public class SupervisorActor extends AbstractActorWithStash {
 
-    private static final int FPS = 60;
+    private static final int MAX_FPS = 60;
     private static final double WIDTH = 1000;
     private static final double HEIGHT = 1000;
     private static final double MAX_SPEED = 4.0;
@@ -29,8 +29,7 @@ public class SupervisorActor extends AbstractActorWithStash {
     private final List<ActorRef> boidActors;
     private final List<Boid> boids;
     private final Receive stoppedBehavior;
-    private Receive runningBehavior;
-    private Receive pausedBehavior;
+    private Receive runningBehavior, pausedBehavior;
     private double alignmentWeight = 1.0, cohesionWeight = 1.0, separationWeight = 1.0;
     private long lastFrameTime;
 
@@ -75,12 +74,7 @@ public class SupervisorActor extends AbstractActorWithStash {
      */
     public record UpdatedBoidMsg(Boid boid) { }
 
-    /**
-     * This class represents a tick in the simulation. It signals that the simulation should update its state.
-     */
-    public static class TickMsg { }
-
-    public SupervisorActor(ActorRef viewActor) {
+    public SupervisorActor(ActorRef viewActor, ActorRef notifierActor) {
         this.log = Logging.getLogger(getContext().getSystem(), this);
         this.boidActors = new ArrayList<>();
         this.boids = new ArrayList<>();
@@ -109,9 +103,8 @@ public class SupervisorActor extends AbstractActorWithStash {
                     }
                     getContext().become(this.runningBehavior);
                     this.updateBoids();
-                    getSelf().tell(new TickMsg(), getSelf());
                 })
-                .match(TickMsg.class, msg -> {})
+                .match(TimerActor.TickMsg.class, msg -> log.info("Received TickMsg but simulation's stopped"))
                 .matchAny(this::unknownMsgHandler)
                 .build();
 
@@ -133,26 +126,32 @@ public class SupervisorActor extends AbstractActorWithStash {
                         this.updateWeight(msg);
                         log.info("Update " + msg.weight + " weight to " + msg.value);
                 })
-                .match(UpdatedBoidMsg.class, msg -> this.boids.add(msg.boid))
-                .match(TickMsg.class, msg -> {
-                        if (boids.size() == boidActors.size()) {
-                            if (viewActor != null) {
-                                long currentTime = System.currentTimeMillis();
-                                long dtElapsed = currentTime - lastFrameTime;
-                                if (dtElapsed >= 1000 / FPS) {
-                                    lastFrameTime = currentTime;
-                                    int fps = (int) (1000.0 / dtElapsed);
-                                    viewActor.tell(
-                                            new ViewActor.RenderResultsMsg(fps, new ArrayList<>(this.boids)),
-                                            getSelf()
-                                    );
-                                    this.updateBoids();
-                                }
-                            } else {
-                                log.warning("ViewActor not set - cannot send render results");
-                            }
+                .match(UpdatedBoidMsg.class, msg -> {
+                    this.boids.add(msg.boid);
+                    if (boids.size() == boidActors.size()) {
+                        long framePeriod = 1000 / MAX_FPS;
+                        long currentTime = System.currentTimeMillis();
+                        long dtElapsed = currentTime - lastFrameTime;
+                        long remaining = framePeriod - dtElapsed;
+                        if (remaining > 0) {
+                            notifierActor.tell(new TimerActor.RequestNotificationMsg(remaining, currentTime), getSelf());
+                        } else {
+                            getSelf().tell(new TimerActor.TickMsg(), ActorRef.noSender());
                         }
-                        getSelf().tell(new TickMsg(), ActorRef.noSender());
+                    }
+                })
+                .match(TimerActor.TickMsg.class, msg -> {
+                        if (viewActor != null) {
+                            long currentTime = System.currentTimeMillis();
+                            viewActor.tell(
+                                    new ViewActor.RenderResultsMsg((int) (1000.0 / (currentTime - lastFrameTime)), new ArrayList<>(this.boids)),
+                                    getSelf()
+                            );
+                            lastFrameTime = currentTime;
+                            this.updateBoids();
+                        } else {
+                            log.warning("ViewActor not set - cannot send render results");
+                        }
                 })
                 .matchAny(this::unknownMsgHandler)
                 .build();
@@ -162,10 +161,9 @@ public class SupervisorActor extends AbstractActorWithStash {
                         viewActor.tell(new ViewActor.SetPauseStateMsg(false), getSelf());
                         log.info("Simulation resumed");
                         getContext().become(this.runningBehavior);
-                        getSelf().tell(new TickMsg(), ActorRef.noSender());
                 })
                 .match(UpdateWeightsMsg.class, this::updateWeight)
-                .match(TickMsg.class, msg -> {})
+                .match(TimerActor.TickMsg.class, msg -> log.info("Received TickMsg but simulation's paused"))
                 .matchAny(this::unknownMsgHandler)
                 .build();
     }
@@ -182,8 +180,8 @@ public class SupervisorActor extends AbstractActorWithStash {
      * Creates Props for a supervisor actor.
      * @return a Props for creating a supervisor actor, which can then be further configured
      */
-    public static Props props(ActorRef viewActor) {
-        return Props.create(SupervisorActor.class, viewActor);
+    public static Props props(ActorRef viewActor, ActorRef notifierActor) {
+        return Props.create(SupervisorActor.class, viewActor, notifierActor);
     }
 
     private void unknownMsgHandler(Object msg) {
