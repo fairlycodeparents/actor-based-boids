@@ -1,6 +1,7 @@
 package pcd.ass03.actors;
 
 import akka.actor.AbstractActor;
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
@@ -8,10 +9,7 @@ import pcd.ass03.model.Boid;
 import pcd.ass03.model.P2d;
 import pcd.ass03.model.V2d;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-
 /**
  * This actor represents a boid in the boids simulation.
  * It processes messages to update its state based on the boids behavior.
@@ -21,6 +19,10 @@ public class BoidActor extends AbstractActor {
     private final LoggingAdapter log;
     private V2d vel;
     private P2d pos;
+    private ActorRef nearbyActor;
+    private ActorRef supervisorActor;
+
+    public record SetSupervisorActorMsg(ActorRef supervisorActor) {}
 
     /**
      * Message to request an update of the boid's state.
@@ -41,6 +43,14 @@ public class BoidActor extends AbstractActor {
                                    double avoidRadius, double perceptionRadius, double maxSpeed, double minX,
                                    double maxX, double minY, double maxY, double width, double height) { }
 
+
+    /**
+     * This message is sent to signal that neighbors has been calculated.
+     */
+    public record CalculatedNeighborsMsg(List<Boid> boids, double separation, double alignment, double cohesion,
+                                         double avoidRadius, double perceptionRadius, double maxSpeed, double minX,
+                                         double maxX, double minY, double maxY, double width, double height) { }
+
     /**
      * Constructor for the BoidActor, initializes the actor with a given velocity and position.
      * @param vel the initial velocity of the boid
@@ -50,6 +60,7 @@ public class BoidActor extends AbstractActor {
         this.vel = vel;
         this.pos = pos;
         this.log = Logging.getLogger(getContext().getSystem(), this);
+        this.nearbyActor = getContext().actorOf(NearbyActor.props(), "nearby-"+getSelf().path().name());
     }
 
     /**
@@ -58,39 +69,32 @@ public class BoidActor extends AbstractActor {
     @Override
     public Receive createReceive() {
         return receiveBuilder()
+                .match(SetSupervisorActorMsg.class, msg -> {
+                    this.supervisorActor = msg.supervisorActor();
+                })
                 .match(UpdateRequestMsg.class, msg -> {
-                    final List<Boid> nearbyBoids = getNearbyBoids(msg.boids(), msg.perceptionRadius);
+                    Boid current = new Boid(this.pos, this.vel);
+                    nearbyActor.tell(new NearbyActor.calculateNeighborsMsg(current, msg.boids, msg.separation, msg.alignment, msg.cohesion,
+                            msg.avoidRadius, msg.perceptionRadius, msg.maxSpeed,
+                            msg.minX, msg.maxX, msg.minY, msg.maxY, msg.width, msg.height), getSelf());
+                }).match(CalculatedNeighborsMsg.class, msg -> {
+                    List<Boid> nearbyBoids = msg.boids;
                     update(nearbyBoids, msg.separation, msg.alignment, msg.cohesion, msg.avoidRadius, msg.maxSpeed,
                             msg.minX, msg.maxX, msg.minY, msg.maxY, msg.width, msg.height);
-                    getSender().tell(new SupervisorActor.UpdatedBoidMsg(new Boid(this.pos, this.vel)), getSelf());
+                    supervisorActor.tell(new SupervisorActor.UpdatedBoidMsg(new Boid(this.pos, this.vel)), getSelf());
                 })
                 .matchAny(msg -> log.info("Received unknown message: " + msg))
                 .build();
     }
 
     /**
-     * Creates Props for a supervisor actor.
+     * Creates Props for a boid actor.
      * @param vel the initial velocity of the boid
      * @param pos the initial position of the boid
-     * @return a Props for creating a supervisor actor, which can then be further configured
+     * @return a Props for creating a boid actor, which can then be further configured
      */
     public static Props props(V2d vel, P2d pos) {
         return Props.create(BoidActor.class, vel, pos);
-    }
-
-    private List<Boid> getNearbyBoids(List<Boid> boids, double perceptionRadius) {
-        var list = new ArrayList<Boid>();
-        for (Boid other : boids) {
-            Boid current = new Boid(this.pos, this.vel);
-            if (!Objects.equals(other, current)) {
-                P2d otherPos = other.pos();
-                double distance = this.pos.distance(otherPos);
-                if (distance < perceptionRadius) {
-                    list.add(other);
-                }
-            }
-        }
-        return list;
     }
 
     private void update(List<Boid> nearbyBoids, double separationWeight, double alignmentWeight, double cohesionWeight,
