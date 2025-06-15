@@ -1,6 +1,6 @@
 package pcd.ass03.actors;
 
-import akka.actor.AbstractActorWithStash;
+import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
@@ -9,7 +9,7 @@ import akka.event.LoggingAdapter;
  * This actor represents a timer that can notify after a specified duration.
  * It is used to manage time-based events in the simulation.
  */
-public class TimerActor extends AbstractActorWithStash {
+public class TimerActor extends AbstractActor {
 
     private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
 

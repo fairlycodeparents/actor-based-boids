@@ -1,6 +1,6 @@
 package pcd.ass03.actors;
 
-import akka.actor.AbstractActorWithStash;
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
@@ -16,7 +16,7 @@ import java.util.List;
  * This actor supervises the Boids simulation, managing its lifecycle and state transitions.
  * It can start, stop, pause, and resume the simulation.
  */
-public class SupervisorActor extends AbstractActorWithStash {
+public class SupervisorActor extends AbstractActor {
 
     private static final int MAX_FPS = 60;
     private static final double WIDTH = 1000;
