@@ -62,6 +62,7 @@ public class ViewImpl implements ChangeListener, View {
 
         frame.setContentPane(cp);
         frame.setVisible(true);
+		frame.setResizable(true);
     }
 
 	/**

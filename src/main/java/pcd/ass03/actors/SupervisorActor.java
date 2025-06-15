@@ -31,7 +31,7 @@ public class SupervisorActor extends AbstractActorWithStash {
     private final Receive stoppedBehavior;
     private Receive runningBehavior;
     private Receive pausedBehavior;
-    private double alignmentWeight, cohesionWeight, separationWeight;
+    private double alignmentWeight = 1.0, cohesionWeight = 1.0, separationWeight = 1.0;
     private long lastFrameTime;
 
     /**
