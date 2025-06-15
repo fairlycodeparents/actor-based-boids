@@ -24,12 +24,18 @@ public class SupervisorActor extends AbstractActorWithStash {
     private final LoggingAdapter log;
     private final List<ActorRef> boidActors;
     private final List<Boid> boids;
-    private Receive stoppedBehavior, runningBehavior, pausedBehavior;
+    private final Receive stoppedBehavior;
+    private Receive runningBehavior;
+    private Receive pausedBehavior;
     private double alignmentWeight, cohesionWeight, separationWeight;
     private ActorRef viewActor;
     private long lastFrameTime;
 
-    public record SetViewActorMsg(ActorRef viewActor) {}
+    /**
+     * This message allows to set the view actor that will render the results of the simulation.
+     * @param viewActor the actor that will render the results
+     */
+    public record SetViewActorMsg(ActorRef viewActor) { }
 
     /**
      * This message allows to start the simulation with a specified number of boids.
@@ -52,10 +58,6 @@ public class SupervisorActor extends AbstractActorWithStash {
      */
     public static final class ResumeMsg { }
 
-    public enum Weights {
-        ALIGNMENT, COHESION, SEPARATION
-    }
-
     /**
      * This message allows to update the weights of the boids behaviors.
      * @param weight the weight to update
@@ -64,32 +66,28 @@ public class SupervisorActor extends AbstractActorWithStash {
     public record UpdateWeightsMsg(Weights weight, double value) { }
 
     /**
+     * This enum represents the different weights that can be updated in the boids behaviors.
+     */
+    public enum Weights {
+        ALIGNMENT, COHESION, SEPARATION
+    }
+
+    /**
      * This message is sent to signal that a boid has been updated.
      * @param boid the updated boid
      */
-    public record UpdatedBoidMsg(Boid boid) {}
+    public record UpdatedBoidMsg(Boid boid) { }
 
     /**
      * This class represents a tick in the simulation. It signals that the simulation should update its state.
      */
     public static class TickMsg { }
 
-    private void unknownMsgHandler(Object msg) {
-        log.info("Received unknown message: " + msg);
-    }
-
-    private void updateWeight(UpdateWeightsMsg msg) {
-        switch (msg.weight) {
-            case ALIGNMENT -> this.alignmentWeight = msg.value;
-            case COHESION -> this.cohesionWeight = msg.value;
-            case SEPARATION -> this.separationWeight = msg.value;
-        }
-    }
-
     public SupervisorActor() {
         this.log = Logging.getLogger(getContext().getSystem(), this);
         this.boidActors = new ArrayList<>();
         this.boids = new ArrayList<>();
+
         this.stoppedBehavior = receiveBuilder()
                 .match(SetViewActorMsg.class, msg -> this.viewActor = msg.viewActor())
                 .match(StartMsg.class, msg -> {
@@ -120,6 +118,7 @@ public class SupervisorActor extends AbstractActorWithStash {
                 })
                 .matchAny(this::unknownMsgHandler)
                 .build();
+
         this.runningBehavior = receiveBuilder()
                 .match(StopMsg.class, msg -> {
                         for (ActorRef boidActor : this.boidActors) {
@@ -158,6 +157,7 @@ public class SupervisorActor extends AbstractActorWithStash {
                 })
                 .matchAny(this::unknownMsgHandler)
                 .build();
+
         this.pausedBehavior = receiveBuilder()
                 .match(ResumeMsg.class, msg -> {
                         viewActor.tell(new ViewActor.SetPauseStateMsg(false), getSelf());
@@ -167,6 +167,34 @@ public class SupervisorActor extends AbstractActorWithStash {
                 .match(UpdateWeightsMsg.class, this::updateWeight)
                 .matchAny(this::unknownMsgHandler)
                 .build();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Receive createReceive() {
+        return this.stoppedBehavior;
+    }
+
+    /**
+     * Creates Props for a supervisor actor.
+     * @return a Props for creating a supervisor actor, which can then be further configured
+     */
+    public static Props props() {
+        return Props.create(SupervisorActor.class);
+    }
+
+    private void unknownMsgHandler(Object msg) {
+        log.info("Received unknown message: " + msg);
+    }
+
+    private void updateWeight(UpdateWeightsMsg msg) {
+        switch (msg.weight) {
+            case ALIGNMENT -> this.alignmentWeight = msg.value;
+            case COHESION -> this.cohesionWeight = msg.value;
+            case SEPARATION -> this.separationWeight = msg.value;
+        }
     }
 
     private int updateFPS() {
@@ -189,19 +217,4 @@ public class SupervisorActor extends AbstractActorWithStash {
         this.boids.clear();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Receive createReceive() {
-        return this.stoppedBehavior;
-    }
-
-    /**
-     * Creates Props for a supervisor actor.
-     * @return a Props for creating a supervisor actor, which can then be further configured
-     */
-    public static Props props() {
-        return Props.create(SupervisorActor.class);
-    }
 }

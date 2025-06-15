@@ -41,10 +41,6 @@ public class BoidActor extends AbstractActor {
                                    double maxSpeed, double minX, double maxX, double minY, double maxY, double width,
                                    double height) { }
 
-    private void unknownMsgHandler(Object msg) {
-        log.info("Received unknown message: " + msg);
-    }
-
     /**
      * Constructor for the BoidActor, initializes the actor with a given velocity and position.
      * @param vel the initial velocity of the boid
@@ -55,6 +51,32 @@ public class BoidActor extends AbstractActor {
         this.pos = pos;
         this.log = Logging.getLogger(getContext().getSystem(), this);
         log.info("BoidActor {} created with position: {}, velocity: {}", getSelf().path().name(), pos, vel); // TODO: log used as a debugging tool
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Receive createReceive() {
+        return receiveBuilder()
+                .match(UpdateRequestMsg.class, msg -> {
+                    final List<Boid> nearbyBoids = getNearbyBoids(msg.boids(), msg.separation);
+                    update(nearbyBoids, msg.alignment, msg.cohesion, msg.separation, msg.separation, msg.maxSpeed,
+                            msg.minX, msg.maxX, msg.minY, msg.maxY, msg.width, msg.height);
+                    getSender().tell(new SupervisorActor.UpdatedBoidMsg(new Boid(this.pos, this.vel)), getSelf());
+                })
+                .matchAny(msg -> log.info("Received unknown message: " + msg))
+                .build();
+    }
+
+    /**
+     * Creates Props for a supervisor actor.
+     * @param vel the initial velocity of the boid
+     * @param pos the initial position of the boid
+     * @return a Props for creating a supervisor actor, which can then be further configured
+     */
+    public static Props props(V2d vel, P2d pos) {
+        return Props.create(BoidActor.class, vel, pos);
     }
 
     private List<Boid> getNearbyBoids(List<Boid> boids, double perceptionRadius) {
@@ -150,31 +172,5 @@ public class BoidActor extends AbstractActor {
             return new V2d(dx, dy).getNormalized();
         }
         return new V2d(0, 0);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Receive createReceive() {
-        return receiveBuilder()
-                .match(UpdateRequestMsg.class, msg -> {
-                    final List<Boid> nearbyBoids = getNearbyBoids(msg.boids(), msg.separation);
-                    update(nearbyBoids, msg.alignment, msg.cohesion, msg.separation, msg.separation, msg.maxSpeed,
-                            msg.minX, msg.maxX, msg.minY, msg.maxY, msg.width, msg.height);
-                    getSender().tell(new SupervisorActor.UpdatedBoidMsg(new Boid(this.pos, this.vel)), getSelf());
-                })
-                .matchAny(this::unknownMsgHandler)
-                .build();
-    }
-
-    /**
-     * Creates Props for a supervisor actor.
-     * @param vel the initial velocity of the boid
-     * @param pos the initial position of the boid
-     * @return a Props for creating a supervisor actor, which can then be further configured
-     */
-    public static Props props(V2d vel, P2d pos) {
-        return Props.create(BoidActor.class, vel, pos);
     }
 }

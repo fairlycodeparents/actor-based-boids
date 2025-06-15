@@ -25,10 +25,7 @@ public class PrioritySchedulerMailbox extends UnboundedStablePriorityMailbox {
     public static class SchedulerMsgComparator implements Comparator<Envelope> {
 
         /**
-         * Compares two Envelope objects to determine their priority in the mailbox.
-         * @param o1 the first envelope
-         * @param o2 the second envelope
-         * @return 1 if o1 is TickMsg and o2 is not, -1 if o2 is TickMsg and o1 is not, 0 otherwise
+         * {@inheritDoc}
          */
         @Override
         public int compare(final Envelope o1, final Envelope o2) {

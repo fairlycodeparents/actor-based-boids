@@ -64,11 +64,17 @@ public class ViewImpl implements ChangeListener, View {
         frame.setVisible(true);
     }
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void start() {
 		supervisorActor.tell(new SupervisorActor.StartMsg(this.getBoidCountFromUser(frame), SIDE_SIZE), ActorRef.noSender());
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void updatePauseState(boolean isPaused) {
 		this.isPaused = isPaused;
@@ -133,6 +139,9 @@ public class ViewImpl implements ChangeListener, View {
 		return slider;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void stateChanged(ChangeEvent e) {
 		if (e.getSource() == this.separationSlider) {
@@ -156,11 +165,17 @@ public class ViewImpl implements ChangeListener, View {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void setSupervisorActor(ActorRef supervisorActor) {
 		this.supervisorActor = supervisorActor;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public void render(int FPS, List<Boid> boids) {
 		this.boidsPanel.setFrameRate(FPS);

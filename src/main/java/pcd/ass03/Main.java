@@ -12,6 +12,9 @@ import pcd.ass03.view.ViewImpl;
 
 import java.io.File;
 
+/**
+ * Entry point for the Boids simulation application.
+ */
 public class Main {
     public static void main(final String[] args) {
         final View view = new ViewImpl();

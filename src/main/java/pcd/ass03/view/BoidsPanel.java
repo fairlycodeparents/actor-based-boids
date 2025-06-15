@@ -45,6 +45,9 @@ public class BoidsPanel extends JPanel {
         this.boids.addAll(boids);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
