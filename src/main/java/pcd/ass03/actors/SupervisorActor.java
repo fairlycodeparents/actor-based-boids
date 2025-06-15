@@ -18,8 +18,12 @@ import java.util.List;
  */
 public class SupervisorActor extends AbstractActorWithStash {
 
-    private static final double MAX_SPEED = 4.0;
     private static final int FPS = 60;
+    private static final double WIDTH = 1000;
+    private static final double HEIGHT = 1000;
+    private static final double MAX_SPEED = 4.0;
+    private static final double AVOID_RADIUS = 20.0;
+    private static final double PERCEPTION_RADIUS = 50.0;
 
     private final LoggingAdapter log;
     private final List<ActorRef> boidActors;
@@ -196,8 +200,9 @@ public class SupervisorActor extends AbstractActorWithStash {
     private void updateBoids() {
         for (ActorRef boidActor : this.boidActors) {
             boidActor.tell(new BoidActor.UpdateRequestMsg(
-                    new ArrayList<>(this.boids), this.alignmentWeight, this.cohesionWeight, this.separationWeight,
-                    MAX_SPEED, -1000, 1000, -1000, 1000, 2000, 2000
+                    new ArrayList<>(this.boids), this.separationWeight, this.alignmentWeight, this.cohesionWeight,
+                    AVOID_RADIUS, PERCEPTION_RADIUS, MAX_SPEED, -WIDTH/2, WIDTH/2, -HEIGHT/2,
+                    HEIGHT/2, WIDTH, HEIGHT
             ), getSelf());
         }
         this.boids.clear();

@@ -38,8 +38,8 @@ public class BoidActor extends AbstractActor {
      * @param height the height of the simulation area
      */
     public record UpdateRequestMsg(List<Boid> boids, double separation, double alignment, double cohesion,
-                                   double maxSpeed, double minX, double maxX, double minY, double maxY, double width,
-                                   double height) { }
+                                   double avoidRadius, double perceptionRadius, double maxSpeed, double minX,
+                                   double maxX, double minY, double maxY, double width, double height) { }
 
     /**
      * Constructor for the BoidActor, initializes the actor with a given velocity and position.
@@ -59,8 +59,8 @@ public class BoidActor extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(UpdateRequestMsg.class, msg -> {
-                    final List<Boid> nearbyBoids = getNearbyBoids(msg.boids(), msg.separation);
-                    update(nearbyBoids, msg.alignment, msg.cohesion, msg.separation, msg.separation, msg.maxSpeed,
+                    final List<Boid> nearbyBoids = getNearbyBoids(msg.boids(), msg.perceptionRadius);
+                    update(nearbyBoids, msg.separation, msg.alignment, msg.cohesion, msg.avoidRadius, msg.maxSpeed,
                             msg.minX, msg.maxX, msg.minY, msg.maxY, msg.width, msg.height);
                     getSender().tell(new SupervisorActor.UpdatedBoidMsg(new Boid(this.pos, this.vel)), getSelf());
                 })
@@ -93,9 +93,9 @@ public class BoidActor extends AbstractActor {
         return list;
     }
 
-    private void update(List<Boid> nearbyBoids, double alignmentWeight, double cohesionWeight,
-                       double separationWeight, double avoidRadius, double maxSpeed,
-                       double minX, double maxX, double minY, double maxY, double width, double height) {
+    private void update(List<Boid> nearbyBoids, double separationWeight, double alignmentWeight, double cohesionWeight,
+                        double avoidRadius, double maxSpeed, double minX, double maxX, double minY, double maxY,
+                        double width, double height) {
 
         // Calculate new velocity based on nearby boids
         V2d separation = calculateSeparation(nearbyBoids, avoidRadius);
