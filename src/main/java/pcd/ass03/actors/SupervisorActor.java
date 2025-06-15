@@ -131,16 +131,22 @@ public class SupervisorActor extends AbstractActorWithStash {
                 })
                 .match(UpdatedBoidMsg.class, msg -> this.boids.add(msg.boid))
                 .match(TickMsg.class, msg -> {
-                        int fps = this.updateFPS();
-                        log.info("Tick received: " + fps);
-                        if (boids.size() == boidActors.size() && fps > 0) {
+                        log.info("Tick received");
+                        if (boids.size() == boidActors.size()) {
                             if (viewActor != null) {
-                                viewActor.tell(
-                                        new ViewActor.RenderResultsMsg(fps, new ArrayList<>(this.boids)),
-                                        getSelf()
-                                );
-                                log.info("render of " + this.boids.size() + " boids");
-                                this.updateBoids();
+                                long currentTime = System.currentTimeMillis();
+                                long dtElapsed = currentTime - lastFrameTime;
+                                if (dtElapsed >= FPS) {
+                                    lastFrameTime = currentTime;
+                                    viewActor.tell(
+                                            new ViewActor.RenderResultsMsg(
+                                                    (int) (1000/dtElapsed),
+                                                    new ArrayList<>(this.boids)
+                                            ), getSelf()
+                                    );
+                                    log.info("render of " + this.boids.size() + " boids");
+                                    this.updateBoids();
+                                }
                             } else {
                                 log.warning("ViewActor not set - cannot send render results");
                             }
@@ -186,16 +192,6 @@ public class SupervisorActor extends AbstractActorWithStash {
             case ALIGNMENT -> this.alignmentWeight = msg.value;
             case COHESION -> this.cohesionWeight = msg.value;
             case SEPARATION -> this.separationWeight = msg.value;
-        }
-    }
-
-    private int updateFPS() {
-        long currentTime = System.currentTimeMillis();
-        var dtElapsed = currentTime - lastFrameTime;
-        if (dtElapsed < FPS) {
-            return -1;
-        } else {
-            return (int) (1000/dtElapsed);
         }
     }
 
