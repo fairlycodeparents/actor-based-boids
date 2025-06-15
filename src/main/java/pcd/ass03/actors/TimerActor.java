@@ -38,7 +38,6 @@ public class TimerActor extends AbstractActor {
 
                     if (remainingTime <= 0) {
                         getSender().tell(new TickMsg(), getSelf());
-                        log.info("Notification sent that time has elapsed");
                     } else {
                         getSelf().tell(new RequestNotificationMsg(remainingTime, currentTime), getSender());
                     }
