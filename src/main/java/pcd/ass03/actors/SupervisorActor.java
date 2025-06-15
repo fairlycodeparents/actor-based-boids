@@ -135,15 +135,14 @@ public class SupervisorActor extends AbstractActorWithStash {
                             if (viewActor != null) {
                                 long currentTime = System.currentTimeMillis();
                                 long dtElapsed = currentTime - lastFrameTime;
-                                if (dtElapsed >= FPS) {
+                                if (dtElapsed >= 1000 / FPS) {
                                     lastFrameTime = currentTime;
+                                    int fps = (int) (1000.0 / dtElapsed);
                                     viewActor.tell(
-                                            new ViewActor.RenderResultsMsg(
-                                                    (int) (1000/dtElapsed),
-                                                    new ArrayList<>(this.boids)
-                                            ), getSelf()
+                                            new ViewActor.RenderResultsMsg(fps, new ArrayList<>(this.boids)),
+                                            getSelf()
                                     );
-                                    log.info("render of " + this.boids.size() + " boids");
+                                    log.info("render di " + this.boids.size() + " boids");
                                     this.updateBoids();
                                 }
                             } else {
