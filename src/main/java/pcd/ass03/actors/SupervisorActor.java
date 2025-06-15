@@ -161,6 +161,7 @@ public class SupervisorActor extends AbstractActorWithStash {
                         viewActor.tell(new ViewActor.SetPauseStateMsg(false), getSelf());
                         log.info("Simulation resumed");
                         getContext().become(this.runningBehavior);
+                        updateBoids();
                 })
                 .match(UpdateWeightsMsg.class, this::updateWeight)
                 .match(TimerActor.TickMsg.class, msg -> log.info("Received TickMsg but simulation's paused"))
