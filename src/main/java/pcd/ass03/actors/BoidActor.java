@@ -19,7 +19,10 @@ public class BoidActor extends AbstractActor {
     private final LoggingAdapter log;
     private V2d vel;
     private P2d pos;
-    private final ActorRef nearbyActor;
+    private ActorRef nearbyActor;
+    private ActorRef supervisorActor;
+
+    public record SetSupervisorActorMsg(ActorRef supervisorActor) {}
 
     /**
      * Message to request an update of the boid's state.
@@ -66,6 +69,9 @@ public class BoidActor extends AbstractActor {
     @Override
     public Receive createReceive() {
         return receiveBuilder()
+                .match(SetSupervisorActorMsg.class, msg -> {
+                    this.supervisorActor = msg.supervisorActor();
+                })
                 .match(UpdateRequestMsg.class, msg -> {
                     Boid current = new Boid(this.pos, this.vel);
                     nearbyActor.tell(new NearbyActor.calculateNeighborsMsg(current, msg.boids, msg.separation, msg.alignment, msg.cohesion,
@@ -75,7 +81,7 @@ public class BoidActor extends AbstractActor {
                     List<Boid> nearbyBoids = msg.boids;
                     update(nearbyBoids, msg.separation, msg.alignment, msg.cohesion, msg.avoidRadius, msg.maxSpeed,
                             msg.minX, msg.maxX, msg.minY, msg.maxY, msg.width, msg.height);
-                    getSender().tell(new SupervisorActor.UpdatedBoidMsg(new Boid(this.pos, this.vel)), getSelf());
+                    supervisorActor.tell(new SupervisorActor.UpdatedBoidMsg(new Boid(this.pos, this.vel)), getSelf());
                 })
                 .matchAny(msg -> log.info("Received unknown message: " + msg))
                 .build();
