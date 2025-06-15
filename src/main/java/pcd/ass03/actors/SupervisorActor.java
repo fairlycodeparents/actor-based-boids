@@ -88,7 +88,7 @@ public class SupervisorActor extends AbstractActorWithStash {
                     }
                     boidActors.clear();
                     lastFrameTime = System.currentTimeMillis();
-                    log.info("Starting simulation with {} boids", msg.numBoids); // TODO: log used as a debugging tool
+                    log.info("Starting simulation with " + msg.numBoids + " boids");
                     for (int i = 0; i < msg.numBoids; i++) {
                         P2d pos = new P2d(
                                 -msg.frameSize / 2 + Math.random() * msg.frameSize,
@@ -105,8 +105,6 @@ public class SupervisorActor extends AbstractActorWithStash {
                     getContext().become(this.runningBehavior);
                     this.updateBoids();
                     getSelf().tell(new TickMsg(), getSelf());
-                    log.info("Current boid actors:" +
-                            this.boidActors.stream().map(act -> act.path().name()).toList());
                 })
                 .match(TickMsg.class, msg -> {})
                 .matchAny(this::unknownMsgHandler)
@@ -128,7 +126,7 @@ public class SupervisorActor extends AbstractActorWithStash {
                 })
                 .match(UpdateWeightsMsg.class, msg -> {
                         this.updateWeight(msg);
-                        log.info("Updated " + msg.weight);
+                        log.info("Update " + msg.weight + " weight to " + msg.value);
                 })
                 .match(UpdatedBoidMsg.class, msg -> this.boids.add(msg.boid))
                 .match(TickMsg.class, msg -> {
@@ -143,7 +141,6 @@ public class SupervisorActor extends AbstractActorWithStash {
                                             new ViewActor.RenderResultsMsg(fps, new ArrayList<>(this.boids)),
                                             getSelf()
                                     );
-                                    log.info("render di " + this.boids.size() + " boids");
                                     this.updateBoids();
                                 }
                             } else {

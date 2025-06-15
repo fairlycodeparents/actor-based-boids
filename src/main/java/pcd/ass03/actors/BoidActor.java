@@ -50,7 +50,6 @@ public class BoidActor extends AbstractActor {
         this.vel = vel;
         this.pos = pos;
         this.log = Logging.getLogger(getContext().getSystem(), this);
-        log.info("BoidActor {} created with position: {}, velocity: {}", getSelf().path().name(), pos, vel); // TODO: log used as a debugging tool
     }
 
     /**
