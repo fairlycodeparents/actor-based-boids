@@ -81,9 +81,7 @@ public class SupervisorActor extends AbstractActor {
 
         this.stoppedBehavior = receiveBuilder()
                 .match(StartMsg.class, msg -> {
-                    for(ActorRef actor : boidActors){
-                        getContext().stop(actor);
-                    }
+                    boidActors.forEach(actor -> getContext().stop(actor));
                     boidActors.clear();
                     lastFrameTime = System.currentTimeMillis();
                     log.info("Starting simulation with " + msg.numBoids + " boids");
@@ -110,9 +108,7 @@ public class SupervisorActor extends AbstractActor {
 
         this.runningBehavior = receiveBuilder()
                 .match(StopMsg.class, msg -> {
-                        for (ActorRef boidActor : this.boidActors) {
-                            getContext().stop(boidActor);
-                        }
+                        this.boidActors.forEach(boidActor -> getContext().stop(boidActor));
                         viewActor.tell(msg, ActorRef.noSender());
                         log.info("Simulation stopped");
                         getContext().become(this.stoppedBehavior);
@@ -198,13 +194,10 @@ public class SupervisorActor extends AbstractActor {
     }
 
     private void updateBoids() {
-        for (ActorRef boidActor : this.boidActors) {
-            boidActor.tell(new BoidActor.UpdateRequestMsg(
-                    new ArrayList<>(this.boids), this.separationWeight, this.alignmentWeight, this.cohesionWeight,
-                    AVOID_RADIUS, PERCEPTION_RADIUS, MAX_SPEED, -WIDTH/2, WIDTH/2, -HEIGHT/2,
-                    HEIGHT/2, WIDTH, HEIGHT
-            ), getSelf());
-        }
+        this.boidActors.forEach(boidActor -> boidActor.tell(new BoidActor.UpdateRequestMsg(
+                new ArrayList<>(this.boids), this.separationWeight, this.alignmentWeight, this.cohesionWeight,
+                AVOID_RADIUS, PERCEPTION_RADIUS, MAX_SPEED, -WIDTH/2, WIDTH/2, -HEIGHT/2,
+                HEIGHT/2, WIDTH, HEIGHT), getSelf()));
         this.boids.clear();
     }
 
