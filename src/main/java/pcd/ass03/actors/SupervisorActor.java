@@ -108,6 +108,7 @@ public class SupervisorActor extends AbstractActorWithStash {
                     log.info("Current boid actors:" +
                             this.boidActors.stream().map(act -> act.path().name()).toList());
                 })
+                .match(TickMsg.class, msg -> {})
                 .matchAny(this::unknownMsgHandler)
                 .build();
 
@@ -162,6 +163,7 @@ public class SupervisorActor extends AbstractActorWithStash {
                         getSelf().tell(new TickMsg(), ActorRef.noSender());
                 })
                 .match(UpdateWeightsMsg.class, this::updateWeight)
+                .match(TickMsg.class, msg -> {})
                 .matchAny(this::unknownMsgHandler)
                 .build();
     }
