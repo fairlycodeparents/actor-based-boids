@@ -131,7 +131,6 @@ public class SupervisorActor extends AbstractActorWithStash {
                 })
                 .match(UpdatedBoidMsg.class, msg -> this.boids.add(msg.boid))
                 .match(TickMsg.class, msg -> {
-                        log.info("Tick received");
                         if (boids.size() == boidActors.size()) {
                             if (viewActor != null) {
                                 long currentTime = System.currentTimeMillis();
@@ -151,7 +150,7 @@ public class SupervisorActor extends AbstractActorWithStash {
                                 log.warning("ViewActor not set - cannot send render results");
                             }
                         }
-                        getSelf().tell(new TickMsg(), getSelf());
+                        getSelf().tell(new TickMsg(), ActorRef.noSender());
                 })
                 .matchAny(this::unknownMsgHandler)
                 .build();
@@ -161,6 +160,7 @@ public class SupervisorActor extends AbstractActorWithStash {
                         viewActor.tell(new ViewActor.SetPauseStateMsg(false), getSelf());
                         log.info("Simulation resumed");
                         getContext().become(this.runningBehavior);
+                        getSelf().tell(new TickMsg(), ActorRef.noSender());
                 })
                 .match(UpdateWeightsMsg.class, this::updateWeight)
                 .matchAny(this::unknownMsgHandler)
