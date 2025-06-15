@@ -28,14 +28,7 @@ public class SupervisorActor extends AbstractActorWithStash {
     private Receive runningBehavior;
     private Receive pausedBehavior;
     private double alignmentWeight, cohesionWeight, separationWeight;
-    private ActorRef viewActor;
     private long lastFrameTime;
-
-    /**
-     * This message allows to set the view actor that will render the results of the simulation.
-     * @param viewActor the actor that will render the results
-     */
-    public record SetViewActorMsg(ActorRef viewActor) { }
 
     /**
      * This message allows to start the simulation with a specified number of boids.
@@ -83,13 +76,12 @@ public class SupervisorActor extends AbstractActorWithStash {
      */
     public static class TickMsg { }
 
-    public SupervisorActor() {
+    public SupervisorActor(ActorRef viewActor) {
         this.log = Logging.getLogger(getContext().getSystem(), this);
         this.boidActors = new ArrayList<>();
         this.boids = new ArrayList<>();
 
         this.stoppedBehavior = receiveBuilder()
-                .match(SetViewActorMsg.class, msg -> this.viewActor = msg.viewActor())
                 .match(StartMsg.class, msg -> {
                     for(ActorRef actor : boidActors){
                         getContext().stop(actor);
@@ -181,8 +173,8 @@ public class SupervisorActor extends AbstractActorWithStash {
      * Creates Props for a supervisor actor.
      * @return a Props for creating a supervisor actor, which can then be further configured
      */
-    public static Props props() {
-        return Props.create(SupervisorActor.class);
+    public static Props props(ActorRef viewActor) {
+        return Props.create(SupervisorActor.class, viewActor);
     }
 
     private void unknownMsgHandler(Object msg) {
