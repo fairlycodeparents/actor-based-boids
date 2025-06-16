@@ -131,12 +131,12 @@ public class SupervisorActor extends AbstractActor {
                         if (remaining > 0) {
                             notifierActor.tell(new TimerActor.RequestNotificationMsg(remaining, currentTime), getSelf());
                         } else {
-                            this.updateView(viewActor, MAX_FPS);
+                            this.updateView(viewActor, (int) (1000 / (System.currentTimeMillis() - lastFrameTime)));
                         }
                     }
                 })
                 .match(TimerActor.TickMsg.class, msg ->
-                        updateView(viewActor, (int) (1000 / (System.currentTimeMillis() - lastFrameTime))))
+                        updateView(viewActor, MAX_FPS))
                 .matchAny(this::unknownMsgHandler)
                 .build();
 
