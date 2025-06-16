@@ -5,11 +5,14 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+
 import pcd.ass03.model.Boid;
 import pcd.ass03.model.P2d;
+import pcd.ass03.model.SimulationParams;
 import pcd.ass03.model.V2d;
 
 import java.util.List;
+
 /**
  * This actor represents a boid in the boids simulation.
  * It processes messages to update its state based on the boids behavior.
@@ -25,20 +28,9 @@ public class BoidActor extends AbstractActor {
      * Message to request an update of the boid's state.
      * Contains the list of nearby boids and parameters for the boid's behavior.
      * @param boids the list of boids in the simulation
-     * @param separation the weight for separation behavior
-     * @param alignment the weight for alignment behavior
-     * @param cohesion the weight for cohesion behavior
-     * @param maxSpeed the maximum speed of the boid
-     * @param minX the minimum x-coordinate for the boid's position
-     * @param maxX the maximum x-coordinate for the boid's position
-     * @param minY the minimum y-coordinate for the boid's position
-     * @param maxY the maximum y-coordinate for the boid's position
-     * @param width the width of the simulation area
-     * @param height the height of the simulation area
+     * @param params the parameters for the boid's behavior
      */
-    public record UpdateRequestMsg(List<Boid> boids, double separation, double alignment, double cohesion,
-                                   double avoidRadius, double perceptionRadius, double maxSpeed, double minX,
-                                   double maxX, double minY, double maxY, double width, double height) { }
+    public record UpdateRequestMsg(List<Boid> boids, SimulationParams params) { }
 
     /**
      * Constructor for the BoidActor, initializes the actor with a given velocity and position.
@@ -59,17 +51,16 @@ public class BoidActor extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(UpdateRequestMsg.class, msg -> {
+                    SimulationParams params = msg.params;
                     Boid current = new Boid(this.pos, this.vel);
                     nearbyActor.tell(new PromiseActor.RequestMsg<>(
                             input -> input.stream()
                                     .filter(other -> !other.equals(current))
-                                    .filter(other -> other.pos().distance(current.pos()) < msg.perceptionRadius)
+                                    .filter(other -> other.pos().distance(current.pos()) < params.perceptionRadius())
                                     .toList(),
                             msg.boids,
                             nearbyBoids -> {
-                                update(nearbyBoids, msg.separation, msg.alignment, msg.cohesion,
-                                        msg.avoidRadius, msg.maxSpeed, msg.minX, msg.maxX, msg.minY, msg.maxY,
-                                        msg.width, msg.height);
+                                update(nearbyBoids, params);
                                 getContext().parent().tell(new SupervisorActor.UpdatedBoidMsg(new Boid(this.pos, this.vel)), getSelf());
                             }
                     ), getSelf());
@@ -93,24 +84,22 @@ public class BoidActor extends AbstractActor {
         return Props.create(BoidActor.class, vel, pos);
     }
 
-    private void update(List<Boid> nearbyBoids, double separationWeight, double alignmentWeight, double cohesionWeight,
-                        double avoidRadius, double maxSpeed, double minX, double maxX, double minY, double maxY,
-                        double width, double height) {
+    private void update(List<Boid> nearbyBoids, SimulationParams params) {
 
         // Calculate new velocity based on nearby boids
-        V2d separation = calculateSeparation(nearbyBoids, avoidRadius);
+        V2d separation = calculateSeparation(nearbyBoids, params.avoidRadius());
         V2d alignment = calculateAlignment(nearbyBoids);
         V2d cohesion = calculateCohesion(nearbyBoids);
 
         // New velocity is a combination of current velocity and the calculated forces
         V2d newVel = vel
-                .sum(alignment.mul(alignmentWeight))
-                .sum(separation.mul(separationWeight))
-                .sum(cohesion.mul(cohesionWeight));
+                .sum(alignment.mul(params.alignment()))
+                .sum(separation.mul(params.separation()))
+                .sum(cohesion.mul(params.cohesion()));
 
         // Limit the speed of the boid
-        if (newVel.abs() > maxSpeed) {
-            newVel = newVel.getNormalized().mul(maxSpeed);
+        if (newVel.abs() > params.maxSpeed()) {
+            newVel = newVel.getNormalized().mul(params.maxSpeed());
         }
 
         this.vel = newVel;
@@ -119,10 +108,10 @@ public class BoidActor extends AbstractActor {
         P2d newPos = this.pos.sum(this.vel);
 
         // Wrap around logic for the boid's position
-        if (newPos.x() < minX) newPos = newPos.sum(new V2d(width, 0));
-        if (newPos.x() >= maxX) newPos = newPos.sum(new V2d(-width, 0));
-        if (newPos.y() < minY) newPos = newPos.sum(new V2d(0, height));
-        if (newPos.y() >= maxY) newPos = newPos.sum(new V2d(0, -height));
+        if (newPos.x() < params.minX()) newPos = newPos.sum(new V2d(params.width(), 0));
+        if (newPos.x() >= params.maxX()) newPos = newPos.sum(new V2d(-params.width(), 0));
+        if (newPos.y() < params.minY()) newPos = newPos.sum(new V2d(0, params.height()));
+        if (newPos.y() >= params.maxY()) newPos = newPos.sum(new V2d(0, -params.height()));
 
         this.pos = newPos;
     }

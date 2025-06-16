@@ -7,6 +7,7 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import pcd.ass03.model.Boid;
 import pcd.ass03.model.P2d;
+import pcd.ass03.model.SimulationParams;
 import pcd.ass03.model.V2d;
 
 import java.util.ArrayList;
@@ -200,11 +201,14 @@ public class SupervisorActor extends AbstractActor {
     }
 
     private void updateBoids() {
-        List<Boid> copy = new ArrayList<>(this.boids);
         this.boidActors.forEach(boidActor -> boidActor.tell(new BoidActor.UpdateRequestMsg(
-                copy, this.separationWeight, this.alignmentWeight, this.cohesionWeight,
-                AVOID_RADIUS, PERCEPTION_RADIUS, MAX_SPEED, -WIDTH/2, WIDTH/2, -HEIGHT/2,
-                HEIGHT/2, WIDTH, HEIGHT), getSelf()));
+                new ArrayList<>(this.boids),
+                new SimulationParams(
+                        this.separationWeight, this.alignmentWeight, this.cohesionWeight, AVOID_RADIUS,
+                        PERCEPTION_RADIUS, MAX_SPEED, -WIDTH/2, WIDTH/2, -HEIGHT/2,
+                        HEIGHT/2, WIDTH, HEIGHT
+                )
+        ), getSelf()));
         this.boids.clear();
     }
 
