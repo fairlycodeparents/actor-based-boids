@@ -96,7 +96,7 @@ public class SupervisorActor extends AbstractActor {
                         ActorRef boidActor = getContext().actorOf(BoidActor.props(vel, pos), "boid-" + i);
                         boidActor.tell(new BoidActor.SetSupervisorActorMsg(getSelf()),ActorRef.noSender());
                         this.boidActors.add(boidActor);
-                        this.boids.add(i,new Boid(pos,vel));
+                        this.boids.add(new Boid(pos,vel));
                     }
                     getContext().become(this.runningBehavior);
                     this.updateBoids();
@@ -154,9 +154,10 @@ public class SupervisorActor extends AbstractActor {
     }
 
     private void updateView(ActorRef viewActor, int FPS) {
+        List<Boid> copy = new ArrayList<>(this.boids);
         if (viewActor != null) {
             viewActor.tell(
-                    new ViewActor.RenderResultsMsg(FPS, new ArrayList<>(this.boids)),
+                    new ViewActor.RenderResultsMsg(FPS, copy),
                     getSelf()
             );
             lastFrameTime = System.currentTimeMillis();
@@ -195,8 +196,9 @@ public class SupervisorActor extends AbstractActor {
     }
 
     private void updateBoids() {
+        List<Boid> copy = new ArrayList<>(this.boids);
         this.boidActors.forEach(boidActor -> boidActor.tell(new BoidActor.UpdateRequestMsg(
-                new ArrayList<>(this.boids), this.separationWeight, this.alignmentWeight, this.cohesionWeight,
+                copy, this.separationWeight, this.alignmentWeight, this.cohesionWeight,
                 AVOID_RADIUS, PERCEPTION_RADIUS, MAX_SPEED, -WIDTH/2, WIDTH/2, -HEIGHT/2,
                 HEIGHT/2, WIDTH, HEIGHT), getSelf()));
         this.boids.clear();

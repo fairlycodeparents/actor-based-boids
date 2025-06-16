@@ -15,7 +15,7 @@ import java.util.List;
 public class BoidsPanel extends JPanel {
 
     private final View view;
-    private final List<Boid> boids;
+    private List<Boid> boids;
     private int frameRate;
 
     /**
@@ -40,8 +40,7 @@ public class BoidsPanel extends JPanel {
      * @param boids the list of boids
      */
     public void setBoids(List<Boid> boids) {
-        this.boids.clear();
-        this.boids.addAll(boids);
+        this.boids = boids;
     }
 
     /**
