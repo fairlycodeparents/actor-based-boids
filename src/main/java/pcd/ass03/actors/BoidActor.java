@@ -20,9 +20,6 @@ public class BoidActor extends AbstractActor {
     private V2d vel;
     private P2d pos;
     private final ActorRef nearbyActor;
-    private ActorRef supervisorActor;
-
-    public record SetSupervisorActorMsg(ActorRef supervisorActor) {}
 
     /**
      * Message to request an update of the boid's state.
@@ -43,14 +40,6 @@ public class BoidActor extends AbstractActor {
                                    double avoidRadius, double perceptionRadius, double maxSpeed, double minX,
                                    double maxX, double minY, double maxY, double width, double height) { }
 
-
-    /**
-     * This message is sent to signal that neighbors has been calculated.
-     */
-    public record CalculatedNeighborsMsg(List<Boid> boids, double separation, double alignment, double cohesion,
-                                         double avoidRadius, double perceptionRadius, double maxSpeed, double minX,
-                                         double maxX, double minY, double maxY, double width, double height) { }
-
     /**
      * Constructor for the BoidActor, initializes the actor with a given velocity and position.
      * @param vel the initial velocity of the boid
@@ -60,7 +49,7 @@ public class BoidActor extends AbstractActor {
         this.vel = vel;
         this.pos = pos;
         this.log = Logging.getLogger(getContext().getSystem(), this);
-        this.nearbyActor = getContext().actorOf(NearbyActor.props(), "nearby-"+getSelf().path().name());
+        this.nearbyActor = getContext().actorOf(PromiseActor.props());
     }
 
     /**
@@ -69,20 +58,29 @@ public class BoidActor extends AbstractActor {
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .match(SetSupervisorActorMsg.class, msg -> this.supervisorActor = msg.supervisorActor())
                 .match(UpdateRequestMsg.class, msg -> {
                     Boid current = new Boid(this.pos, this.vel);
-                    nearbyActor.tell(new NearbyActor.calculateNeighborsMsg(current, msg.boids, msg.separation, msg.alignment, msg.cohesion,
-                            msg.avoidRadius, msg.perceptionRadius, msg.maxSpeed,
-                            msg.minX, msg.maxX, msg.minY, msg.maxY, msg.width, msg.height), getSelf());
-                }).match(CalculatedNeighborsMsg.class, msg -> {
-                    List<Boid> nearbyBoids = msg.boids;
-                    update(nearbyBoids, msg.separation, msg.alignment, msg.cohesion, msg.avoidRadius, msg.maxSpeed,
-                            msg.minX, msg.maxX, msg.minY, msg.maxY, msg.width, msg.height);
-                    supervisorActor.tell(new SupervisorActor.UpdatedBoidMsg(new Boid(this.pos, this.vel)), getSelf());
+                    nearbyActor.tell(new PromiseActor.RequestMsg<>(
+                            input -> input.stream()
+                                    .filter(other -> !other.equals(current))
+                                    .filter(other -> other.pos().distance(current.pos()) < msg.perceptionRadius)
+                                    .toList(),
+                            msg.boids,
+                            nearbyBoids -> {
+                                update(nearbyBoids, msg.separation, msg.alignment, msg.cohesion,
+                                        msg.avoidRadius, msg.maxSpeed, msg.minX, msg.maxX, msg.minY, msg.maxY,
+                                        msg.width, msg.height);
+                                getContext().parent().tell(new SupervisorActor.UpdatedBoidMsg(new Boid(this.pos, this.vel)), getSelf());
+                            }
+                    ), getSelf());
                 })
+                .match(PromiseActor.CompletedRequestMsg.class, this::handleCompletedRequest)
                 .matchAny(msg -> log.info("Received unknown message: " + msg))
                 .build();
+    }
+
+    private <X> void handleCompletedRequest(PromiseActor.CompletedRequestMsg<X> msg) {
+        msg.onComplete().accept(msg.result());
     }
 
     /**
@@ -175,3 +173,4 @@ public class BoidActor extends AbstractActor {
         return new V2d(0, 0);
     }
 }
+

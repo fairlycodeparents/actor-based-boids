@@ -99,7 +99,6 @@ public class SupervisorActor extends AbstractActor {
                                 Math.random() * MAX_SPEED / 2 - MAX_SPEED / 4
                         );
                         ActorRef boidActor = getContext().actorOf(BoidActor.props(vel, pos), "boid-" + i);
-                        boidActor.tell(new BoidActor.SetSupervisorActorMsg(getSelf()),ActorRef.noSender());
                         this.boidActors.add(boidActor);
                         this.boids.add(new Boid(pos,vel));
                     }
