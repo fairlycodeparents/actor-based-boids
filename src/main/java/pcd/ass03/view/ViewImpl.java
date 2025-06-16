@@ -44,7 +44,7 @@ public class ViewImpl implements ChangeListener, View {
 		cp.add(BorderLayout.NORTH, buttonsPanel);
 
 		// Create a panel for the boids
-		this.boidsPanel = new BoidsPanel(frame.getWidth(), frame.getHeight());
+		this.boidsPanel = new BoidsPanel(this);
 		cp.add(BorderLayout.CENTER, boidsPanel);
 
 		// Create a panel for the sliders
@@ -183,4 +183,21 @@ public class ViewImpl implements ChangeListener, View {
 		this.boidsPanel.setBoids(boids);
 		this.boidsPanel.repaint();
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getWidth() {
+		return this.frame.getWidth();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getHeight() {
+		return this.frame.getHeight();
+	}
+
 }

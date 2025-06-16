@@ -31,4 +31,16 @@ public interface View {
      * @param isPaused true if the simulation is paused, false otherwise
      */
     void updatePauseState(boolean isPaused);
+
+    /**
+     * Returns the current width of the frame.
+     * @return the width of the frame
+     */
+    int getWidth();
+
+    /**
+     * Returns the current height of the frame.
+     * @return the height of the frame
+     */
+    int getHeight();
 }

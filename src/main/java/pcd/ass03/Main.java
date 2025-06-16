@@ -17,6 +17,9 @@ import java.io.File;
  * Entry point for the Boids simulation application.
  */
 public class Main {
+    public static final double WIDTH = 1000;
+    public static final double HEIGHT = 1000;
+
     public static void main(final String[] args) {
         final View view = new ViewImpl();
         final Config config = ConfigFactory.parseFile(new File("src/main/java/pcd/ass03/application.conf"));

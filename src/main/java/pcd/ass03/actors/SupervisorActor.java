@@ -12,15 +12,14 @@ import pcd.ass03.model.V2d;
 import java.util.ArrayList;
 import java.util.List;
 
+import static pcd.ass03.Main.*;
+
 /**
  * This actor supervises the Boids simulation, managing its lifecycle and state transitions.
  * It can start, stop, pause, and resume the simulation.
  */
 public class SupervisorActor extends AbstractActor {
-
     private static final int MAX_FPS = 60;
-    private static final double WIDTH = 1000;
-    private static final double HEIGHT = 1000;
     private static final double MAX_SPEED = 4.0;
     private static final double AVOID_RADIUS = 20.0;
     private static final double PERCEPTION_RADIUS = 50.0;
@@ -132,23 +131,12 @@ public class SupervisorActor extends AbstractActor {
                         if (remaining > 0) {
                             notifierActor.tell(new TimerActor.RequestNotificationMsg(remaining, currentTime), getSelf());
                         } else {
-                            getSelf().tell(new TimerActor.TickMsg(), ActorRef.noSender());
+                            this.updateView(viewActor, MAX_FPS);
                         }
                     }
                 })
-                .match(TimerActor.TickMsg.class, msg -> {
-                        if (viewActor != null) {
-                            long currentTime = System.currentTimeMillis();
-                            viewActor.tell(
-                                    new ViewActor.RenderResultsMsg((int) (1000.0 / (currentTime - lastFrameTime)), new ArrayList<>(this.boids)),
-                                    getSelf()
-                            );
-                            lastFrameTime = currentTime;
-                            this.updateBoids();
-                        } else {
-                            log.warning("ViewActor not set - cannot send render results");
-                        }
-                })
+                .match(TimerActor.TickMsg.class, msg ->
+                        updateView(viewActor, (int) (1000 / (System.currentTimeMillis() - lastFrameTime))))
                 .matchAny(this::unknownMsgHandler)
                 .build();
 
@@ -163,6 +151,19 @@ public class SupervisorActor extends AbstractActor {
                 .match(TimerActor.TickMsg.class, msg -> log.info("Received TickMsg but simulation's paused"))
                 .matchAny(this::unknownMsgHandler)
                 .build();
+    }
+
+    private void updateView(ActorRef viewActor, int FPS) {
+        if (viewActor != null) {
+            viewActor.tell(
+                    new ViewActor.RenderResultsMsg(FPS, new ArrayList<>(this.boids)),
+                    getSelf()
+            );
+            lastFrameTime = System.currentTimeMillis();
+            this.updateBoids();
+        } else {
+            log.warning("ViewActor not set - cannot send render results");
+        }
     }
 
     /**

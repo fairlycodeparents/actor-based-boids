@@ -1,5 +1,6 @@
 package pcd.ass03.view;
 
+import pcd.ass03.Main;
 import pcd.ass03.model.Boid;
 import pcd.ass03.model.P2d;
 
@@ -13,19 +14,17 @@ import java.util.List;
  */
 public class BoidsPanel extends JPanel {
 
-    private final double width, height;
+    private final View view;
     private final List<Boid> boids;
     private int frameRate;
 
     /**
      * Constructor for the BoidsPanel.
-     * @param width the logical width
-     * @param height the logical height
+     * @param view the view
      */
-    public BoidsPanel(double width, double height) {
-        this.width = width;
-        this.height = height;
+    public BoidsPanel(View view) {
         this.boids = new ArrayList<>();
+        this.view = view;
     }
 
     /**
@@ -53,12 +52,17 @@ public class BoidsPanel extends JPanel {
         super.paintComponent(g);
         setBackground(Color.WHITE);
 
+        var width = this.view.getWidth();
+        var height = this.view.getHeight();
+        var xScale = width / Main.WIDTH;
+        var yScale = height / Main.HEIGHT;
+
         g.setColor(Color.BLUE);
         List<Boid> boids = new ArrayList<>(this.boids);
         for (Boid boid : boids) {
             P2d pos = boid.pos();
-            int px = (int)(width / 2.0 + pos.x());
-            int py = (int)(height / 2.0 - pos.y());
+            int px = (int)(width / 2.0 + pos.x() * xScale);
+            int py = (int)(height / 2.0 - pos.y() * yScale);
             g.fillOval(px,py, 5, 5);
         }
 
