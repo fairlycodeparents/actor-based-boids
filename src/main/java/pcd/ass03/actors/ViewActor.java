@@ -31,6 +31,10 @@ public class ViewActor extends AbstractActor {
      */
     public record SetPauseStateMsg(boolean isPaused) { }
 
+    /**
+     * Constructor for the ViewActor, initializes the actor with a given view.
+     * @param view the view to be used by the actor
+     */
     public ViewActor(View view) {
         this.view = view;
         this.log = Logging.getLogger(getContext().getSystem(), this);

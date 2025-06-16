@@ -19,7 +19,7 @@ public class BoidActor extends AbstractActor {
     private final LoggingAdapter log;
     private V2d vel;
     private P2d pos;
-    private ActorRef nearbyActor;
+    private final ActorRef nearbyActor;
     private ActorRef supervisorActor;
 
     public record SetSupervisorActorMsg(ActorRef supervisorActor) {}
@@ -69,9 +69,7 @@ public class BoidActor extends AbstractActor {
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .match(SetSupervisorActorMsg.class, msg -> {
-                    this.supervisorActor = msg.supervisorActor();
-                })
+                .match(SetSupervisorActorMsg.class, msg -> this.supervisorActor = msg.supervisorActor())
                 .match(UpdateRequestMsg.class, msg -> {
                     Boid current = new Boid(this.pos, this.vel);
                     nearbyActor.tell(new NearbyActor.calculateNeighborsMsg(current, msg.boids, msg.separation, msg.alignment, msg.cohesion,

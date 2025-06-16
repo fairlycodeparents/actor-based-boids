@@ -73,6 +73,11 @@ public class SupervisorActor extends AbstractActor {
      */
     public record UpdatedBoidMsg(Boid boid) { }
 
+    /**
+     * Constructor for the SupervisorActor, initializes the actor with the view and notifier actors.
+     * @param viewActor the actor responsible for rendering the simulation results
+     * @param notifierActor the actor responsible for managing time-based notifications
+     */
     public SupervisorActor(ActorRef viewActor, ActorRef notifierActor) {
         this.log = Logging.getLogger(getContext().getSystem(), this);
         this.boidActors = new ArrayList<>();

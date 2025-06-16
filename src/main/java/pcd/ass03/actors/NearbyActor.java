@@ -13,11 +13,7 @@ import java.util.Objects;
 
 public class NearbyActor extends AbstractActor {
 
-    private final LoggingAdapter log;
-
-    public NearbyActor(){
-        this.log = Logging.getLogger(getContext().getSystem(), this);
-    }
+    private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
 
     /**
      * This message allows to calculate the neighbors of a boid.
@@ -28,6 +24,9 @@ public class NearbyActor extends AbstractActor {
                                         double avoidRadius, double perceptionRadius, double maxSpeed, double minX,
                                         double maxX, double minY, double maxY, double width, double height) { }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Receive createReceive() {
         return receiveBuilder()
