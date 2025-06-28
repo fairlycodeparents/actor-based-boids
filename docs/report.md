@@ -42,3 +42,18 @@ e flessibile le diverse versioni concorrenti della simulazione. Nello specifico:
   boids e dell'interazione tra l'utente e il programma. Fornisce dei pulsanti per gestire l'esecuzione della simulazione
   (start, stop e pause/resume) e l'aggiornamento delle regole di movimento di ciascun elemento, tramite sliders.
 - **Controller** (`SupervisorActor`): gestisce il ciclo di vita della simulazione e funge da ponte tra la vista e il modello.
+
+### Modello ad Attori
+Per implementare la simulazione in modo concorrente, è stato scelto un modello ad attori, in cui ogni boid è rappresentato
+da un attore (`BoidActor`) che gestisce il proprio stato e le interazioni con gli altri boids. Questo approccio consente
+di isolare lo stato di ogni boid, evitando conflitti di accesso concorrente, e gestire in modo semplice la comunicazione
+tra boids, poiché ogni attore può inviare e ricevere messaggi.
+
+Altri attori come `SupervisorActor` e `ViewActor` sono stati implementati per gestire il ciclo di vita della simulazione
+e l'interfaccia utente, rispettivamente. Il `SupervisorActor` coordina l'esecuzione della simulazione, avviando e fermando
+i boids, mentre il `ViewActor` si occupa di aggiornare la vista in base agli eventi della simulazione.
+
+`TimerActor` è stato introdotto per gestire il tempo di esecuzione della simulazione, permettendo di controllare la
+velocità di aggiornamento dei boids e sincronizzare l'interfaccia utente con il ciclo di vita della simulazione. Invece,
+`PromiseActor` è stato utilizzato per gestire le operazioni asincrone, come il calcolo della nuova velocità e posizione
+dei boids, per garantire che le operazioni vengano completate prima di procedere con l'aggiornamento dello stato.
