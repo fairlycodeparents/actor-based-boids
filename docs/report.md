@@ -31,3 +31,14 @@ sicuro l'accesso concorrente ai dati condivisi.
 - L'interfaccia utente deve essere reattiva e sincronizzarsi con l'aggiornamento dei boids.
 
 ## Design e Architettura
+Il progetto è stato strutturato seguendo il pattern MVC (Model-View-Controller), con una netta separazione tra logica
+della simulazione, interfaccia grafica e controllo dell'esecuzione. Tale approccio ha consentito di gestire in modo modulare
+e flessibile le diverse versioni concorrenti della simulazione. Nello specifico:
+
+- **Model** (`Boid`): contiene la logica della simulazione dei boids, ne gestisce il mantenimento e l'aggiornamento
+  della posizione e della velocità, secondo le regole di comportamento indicate nel progetto di Reynolds (separazione,
+  coesione, allineamento);
+- **View** (`BoidsPanel`, `ViewImpl`): implementata utilizzando Swing, è responsabile della rappresentazione grafica dei
+  boids e dell'interazione tra l'utente e il programma. Fornisce dei pulsanti per gestire l'esecuzione della simulazione
+  (start, stop e pause/resume) e l'aggiornamento delle regole di movimento di ciascun elemento, tramite sliders.
+- **Controller** (`SupervisorActor`): gestisce il ciclo di vita della simulazione e funge da ponte tra la vista e il modello.
