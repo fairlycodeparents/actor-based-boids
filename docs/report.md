@@ -13,6 +13,7 @@ Terenzi Mirco (1193420; mirco.terenzi@studio.unibo.it)
 
 - [Analisi del problema](#analisi-del-problema)
 - [Design e Architettura](#design-e-architettura)
+- [Modello ad Attori](#modello-ad-attori)
 
 ## Analisi del problema
 Il problema affrontato in questo assignment è la simulazione del comportamento collettivo di boids, entità autonome che 
@@ -21,7 +22,8 @@ Craig Reynolds nel 1986.
 
 Ogni boid, a ogni iterazione del ciclo di simulazione, deve:
 - Analizzare la posizione e velocità di tutti gli altri boid che lo circondano.
-- Calcolare la nuova velocità e aggiornare la propria posizione. 
+- Calcolare la nuova velocità in base alle regole.
+- Aggiornare la propria posizione.
 
 La programmazione concorrente permette di parallelizzare questi aggiornamenti, ma alcuni aspetti richiedono particolare attenzione:
 - Le velocità e le posizioni di ogni boid sono calcolate in base a quelle dei suoi vicini, bisogna quindi gestire in modo 
@@ -45,7 +47,7 @@ e flessibile le diverse versioni concorrenti della simulazione. Nello specifico:
 
 ### Modello ad Attori
 Per implementare la simulazione in modo concorrente, è stato scelto un modello ad attori, in cui ogni boid è rappresentato
-da un attore (`BoidActor`) che gestisce il proprio stato e le interazioni con gli altri boids. Questo approccio consente
+da un attore (`BoidActor`) che gestisce il proprio stato e le interazioni con gli altri boids tramite messaggi asincroni. Questo approccio consente
 di isolare lo stato di ogni boid, evitando conflitti di accesso concorrente, e gestire in modo semplice la comunicazione
 tra boids, poiché ogni attore può inviare e ricevere messaggi.
 
